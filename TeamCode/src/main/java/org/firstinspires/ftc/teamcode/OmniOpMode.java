@@ -64,6 +64,11 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
  */
 
+//NOTES:
+//git fetch --all
+//git reset --hard origin/master
+//https://youtu.be/gnSW2QpkGXQ?si=lnVXFP7B3FyuYVPt
+
 @TeleOp(name="OpDickstein", group="Linear OpMode")
 public class OmniOpMode extends LinearOpMode {
 
