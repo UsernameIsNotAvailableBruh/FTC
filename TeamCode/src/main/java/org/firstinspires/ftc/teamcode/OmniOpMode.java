@@ -35,6 +35,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+
 /*
  * This file contains an example of a Linear "OpMode".
  * An OpMode is a 'program' that runs in either the autonomous or the teleop period of an FTC match.
@@ -63,8 +64,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Basic: Omni Linear OpMode", group="Linear OpMode")
-@Disabled
+@TeleOp(name="OpDickstein", group="Linear OpMode")
 public class OmniOpMode extends LinearOpMode {
 
     // Declare OpMode members for each of the 4 motors.
@@ -103,6 +103,8 @@ public class OmniOpMode extends LinearOpMode {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
+        telemetry.addData("Status fr", "Initialized fr");
+
         waitForStart();
         runtime.reset();
 
@@ -114,6 +116,12 @@ public class OmniOpMode extends LinearOpMode {
             double lateral =  gamepad1.left_stick_x;
             double yaw     =  gamepad1.right_stick_x;
 
+            /*
+            1) Axial:    Driving forward and backward               Left-joystick Forward/Backward
+            2) Lateral:  Strafing right and left                     Left-joystick Right and Left
+            3) Yaw:      Rotating Clockwise and counter clockwise    Right-joystick Right and Left
+            */
+
             // Combine the joystick requests for each axis-motion to determine each wheel's power.
             // Set up a variable for each drive wheel to save the power level for telemetry.
             double leftFrontPower  = axial + lateral + yaw;
@@ -121,7 +129,7 @@ public class OmniOpMode extends LinearOpMode {
             double leftBackPower   = axial - lateral + yaw;
             double rightBackPower  = axial + lateral - yaw;
 
-            // Normalize the values so no wheel power exceeds 100%
+            // Normalize the values so no wheel  power exceeds 100%
             // This ensures that the robot maintains the desired motion.
             max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
             max = Math.max(max, Math.abs(leftBackPower));
