@@ -83,10 +83,10 @@ public class OmniOpMode extends LinearOpMode {
 
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
-        leftFrontDrive  = hardwareMap.get(DcMotor.class, "leftFront"); //Motor 0 = left front
+        leftFrontDrive = hardwareMap.get(DcMotor.class, "leftFront"); //Motor 0 = left front
         rightFrontDrive = hardwareMap.get(DcMotor.class, "rightFront"); //Motor 1 = right front
         rightBackDrive = hardwareMap.get(DcMotor.class, "rightBack"); //Motor 2 = right bottom
-        leftBackDrive  = hardwareMap.get(DcMotor.class, "leftBack"); //Motor 3 = left bottom
+        leftBackDrive = hardwareMap.get(DcMotor.class, "leftBack"); //Motor 3 = left bottom
 
         // ########################################################################################
         // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
@@ -119,14 +119,14 @@ public class OmniOpMode extends LinearOpMode {
             double yaw     =  gamepad1.right_stick_x;*/
 
             double lefty = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
-            double leftx =  gamepad1.left_stick_x;
-            double hypotenuse = Math.sqrt(Math.pow(leftx, 2)+Math.pow(lefty, 2)); //pythagorean theorem
+            double leftx = gamepad1.left_stick_x;
+            double hypotenuse = Math.sqrt(Math.pow(leftx, 2) + Math.pow(lefty, 2)); //pythagorean theorem
             //hypotenuse will always be positive, so make negative if needed
 
-            double leftFrontPower  = 0;
+            double leftFrontPower = 0;
             double rightFrontPower = 0;
-            double leftBackPower   = 0;
-            double rightBackPower  = 0;
+            double leftBackPower = 0;
+            double rightBackPower = 0;
 
             //https://gm0.org/en/latest/_images/mecanum-drive-directions.png
             //https://cdn11.bigcommerce.com/s-x56mtydx1w/images/stencil/original/products/1445/7196/3213-3606-0002-Product-Insight-3__67245__45972.1701993091.png?c=1
@@ -167,6 +167,20 @@ public class OmniOpMode extends LinearOpMode {
                 rightBackPower = lefty;
             }
 
+            boolean leftBumper = gamepad1.left_bumper;
+            boolean rightBumper = gamepad1.right_bumper;
+
+            if (leftBumper) {
+                leftFrontPower  = -leftFrontPower;
+                //rightFrontPower = rightFrontPower;
+                leftBackPower   = -leftBackPower;
+                //rightBackPower  = rightBackPower;
+            } else if (rightBumper) {
+                //leftFrontPower  = leftFrontPower;
+                rightFrontPower = -rightFrontPower;
+                //leftBackPower   = leftBackPower;
+                rightBackPower  = -rightBackPower;
+            }
 
             /*
             1) Axial:    Driving forward and backward               Left-joystick Forward/Backward
@@ -188,10 +202,10 @@ public class OmniOpMode extends LinearOpMode {
             max = Math.max(max, Math.abs(rightBackPower));
 
             if (max > 1.0) {
-                leftFrontPower  /= max;
+                leftFrontPower /= max;
                 rightFrontPower /= max;
-                leftBackPower   /= max;
-                rightBackPower  /= max;
+                leftBackPower /= max;
+                rightBackPower /= max;
             }
 
             // This is test code:
@@ -223,4 +237,5 @@ public class OmniOpMode extends LinearOpMode {
             telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
             telemetry.update();
         }
-    }}
+    }
+}
