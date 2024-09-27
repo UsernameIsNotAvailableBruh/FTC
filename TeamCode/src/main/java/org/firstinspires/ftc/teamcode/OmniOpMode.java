@@ -167,15 +167,12 @@ public class OmniOpMode extends LinearOpMode {
                 rightBackPower = lefty;
             }
 
-            boolean leftBumper = gamepad1.left_bumper;
-            boolean rightBumper = gamepad1.right_bumper;
-
-            if (leftBumper) {
+            if (gamepad1.left_bumper) {
                 leftFrontPower  = -leftFrontPower;
                 //rightFrontPower = rightFrontPower;
                 leftBackPower   = -leftBackPower;
                 //rightBackPower  = rightBackPower;
-            } else if (rightBumper) {
+            } else if (gamepad1.right_bumper) {
                 //leftFrontPower  = leftFrontPower;
                 rightFrontPower = -rightFrontPower;
                 //leftBackPower   = leftBackPower;
