@@ -129,35 +129,38 @@ public class OmniOpMode extends LinearOpMode {
             double rightBackPower  = 0;
 
             //https://gm0.org/en/latest/_images/mecanum-drive-directions.png
+            //https://cdn11.bigcommerce.com/s-x56mtydx1w/images/stencil/original/products/1445/7196/3213-3606-0002-Product-Insight-3__67245__45972.1701993091.png?c=1
             leftFrontPower = 0;
             rightFrontPower = 0;
             leftBackPower = 0;
             rightBackPower = 0;
 
-            if (lefty > 0 && leftx > 0) { //theta in Q1
+            if (lefty > 0 && leftx > 0) { //Q1
                 leftFrontPower = hypotenuse;
                 rightBackPower = hypotenuse;
                 //leftBackPower rightFrontPower are both 0
-            } else if (lefty > 0 && leftx < 0) { //theta in Q2
+            } else if (lefty > 0 && leftx < 0) { //Q2
                 leftBackPower = hypotenuse;
                 rightFrontPower = hypotenuse;
                 //leftFrontPower rightBackPower are both 0
             }
             //Q3 and Q4 are negative hypotenuses
-            else if (lefty < 0 && leftx < 0) { //theta in Q3
+            else if (lefty < 0 && leftx < 0) { //Q3
                 leftFrontPower = -hypotenuse;
                 rightBackPower = -hypotenuse;
                 //leftBackPower rightFrontPower are both 0
-            } else if (lefty < 0 && leftx > 0) { //theta in Q4
+            } else if (lefty < 0 && leftx > 0) { //Q4
                 leftBackPower = -hypotenuse;
                 rightFrontPower = -hypotenuse;
                 //leftFrontPower rightBackPower are both 0
-            } else if (leftx != 0) {//lefty is 0
+            } else if ((gamepad1.dpad_left || gamepad1.dpad_right) || leftx != 0) { //lefty is 0
+                leftx = gamepad1.dpad_right ? 1 : (gamepad1.dpad_left ? -1 : leftx);
                 leftFrontPower = leftx;
                 rightFrontPower = -leftx;
                 leftBackPower = -leftx;
                 rightBackPower = leftx;
-            } else if (lefty != 0) {//leftx is 0
+            } else if ((gamepad1.dpad_down || gamepad1.dpad_up) || lefty != 0) { //leftx is 0
+                lefty = gamepad1.dpad_up ? 1 : (gamepad1.dpad_down ? -1 : lefty);
                 leftFrontPower = lefty;
                 rightFrontPower = lefty;
                 leftBackPower = lefty;
