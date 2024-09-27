@@ -29,7 +29,6 @@
 
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -69,7 +68,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 //git reset --hard origin/master
 //https://youtu.be/gnSW2QpkGXQ?si=lnVXFP7B3FyuYVPt
 
-@TeleOp(name="OpDickstein", group="Linear OpMode")
+@TeleOp(name="OpDickstein", group="OpDicksteinModes")
 public class OmniOpMode extends LinearOpMode {
 
     // Declare OpMode members for each of the 4 motors.
@@ -108,8 +107,6 @@ public class OmniOpMode extends LinearOpMode {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
-        telemetry.addData("Status fr", "Initialized fr");
-
         waitForStart();
         runtime.reset();
 
@@ -117,9 +114,56 @@ public class OmniOpMode extends LinearOpMode {
         while (opModeIsActive()) {
             double max;
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
-            double axial   = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
+            /*double axial   = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
             double lateral =  gamepad1.left_stick_x;
-            double yaw     =  gamepad1.right_stick_x;
+            double yaw     =  gamepad1.right_stick_x;*/
+
+            double lefty = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
+            double leftx =  gamepad1.left_stick_x;
+            double hypotenuse = Math.sqrt(Math.pow(leftx, 2)+Math.pow(lefty, 2)); //pythagorean theorem
+            //hypotenuse will always be positive, so make negative if needed
+
+            double leftFrontPower  = 0;
+            double rightFrontPower = 0;
+            double leftBackPower   = 0;
+            double rightBackPower  = 0;
+
+            //https://gm0.org/en/latest/_images/mecanum-drive-directions.png
+            leftFrontPower = 0;
+            rightFrontPower = 0;
+            leftBackPower = 0;
+            rightBackPower = 0;
+
+            if (lefty > 0 && leftx > 0) { //theta in Q1
+                leftFrontPower = hypotenuse;
+                rightBackPower = hypotenuse;
+                //leftBackPower rightFrontPower are both 0
+            } else if (lefty > 0 && leftx < 0) { //theta in Q2
+                leftBackPower = hypotenuse;
+                rightFrontPower = hypotenuse;
+                //leftFrontPower rightBackPower are both 0
+            }
+            //Q3 and Q4 are negative hypotenuses
+            else if (lefty < 0 && leftx < 0) { //theta in Q3
+                leftFrontPower = -hypotenuse;
+                rightBackPower = -hypotenuse;
+                //leftBackPower rightFrontPower are both 0
+            } else if (lefty < 0 && leftx > 0) { //theta in Q4
+                leftBackPower = -hypotenuse;
+                rightFrontPower = -hypotenuse;
+                //leftFrontPower rightBackPower are both 0
+            } else if (leftx != 0) {//lefty is 0
+                leftFrontPower = leftx;
+                rightFrontPower = -leftx;
+                leftBackPower = -leftx;
+                rightBackPower = leftx;
+            } else if (lefty != 0) {//leftx is 0
+                leftFrontPower = lefty;
+                rightFrontPower = lefty;
+                leftBackPower = lefty;
+                rightBackPower = lefty;
+            }
+
 
             /*
             1) Axial:    Driving forward and backward               Left-joystick Forward/Backward
@@ -129,10 +173,10 @@ public class OmniOpMode extends LinearOpMode {
 
             // Combine the joystick requests for each axis-motion to determine each wheel's power.
             // Set up a variable for each drive wheel to save the power level for telemetry.
-            double leftFrontPower  = axial + lateral + yaw;
+            /*double leftFrontPower  = axial + lateral + yaw;
             double rightFrontPower = axial - lateral - yaw;
             double leftBackPower   = axial - lateral + yaw;
-            double rightBackPower  = axial + lateral - yaw;
+            double rightBackPower  = axial + lateral - yaw;*/
 
             // Normalize the values so no wheel  power exceeds 100%
             // This ensures that the robot maintains the desired motion.
