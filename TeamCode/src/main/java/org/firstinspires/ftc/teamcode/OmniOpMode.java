@@ -32,8 +32,9 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
+import com.qualcomm.robotcore.hardware.Gamepad.RumbleEffect;
 
 /*
  * This file contains an example of a Linear "OpMode".
@@ -66,9 +67,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 //NOTES:
 //git fetch --all
 //git reset --hard origin/master
-//https://youtu.be/gnSW2QpkGXQ?si=lnVXFP7B3FyuYVPt
 
-@TeleOp(name="OpDickstein", group="OpDicksteinModes")
+@TeleOp(name="OpDickstein", group="OpMode")
 public class OmniOpMode extends LinearOpMode {
 
     // Declare OpMode members for each of the 4 motors.
@@ -80,6 +80,12 @@ public class OmniOpMode extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+
+        //https://gm0.org/en/latest/docs/software/tutorials/gamepad.html#storing-gamepad-state
+        Gamepad currentGamepad1 = new Gamepad();
+        Gamepad currentGamepad2 = new Gamepad();
+        Gamepad previousGamepad1 = new Gamepad();
+        Gamepad previousGamepad2 = new Gamepad();
 
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
@@ -107,78 +113,47 @@ public class OmniOpMode extends LinearOpMode {
         telemetry.addData("Status", "Initialized");
         telemetry.update();
 
+        //rumble (just for funsies)
+        RumbleEffect.Builder rumble = new RumbleEffect.Builder();
+        for (double i=0;i<1;i+=.1){
+            rumble = rumble.addStep(i, 1-i, 100);
+            rumble = rumble.addStep(1-i, i, 100);
+        }
+        gamepad1.runRumbleEffect(rumble.build()); //hopefully this works, idk
+
         waitForStart();
         runtime.reset();
 
         // run until the end of the match (driver presses STOP)
+        boolean ZPBehaviorToggle = true; //True is brake
         while (opModeIsActive()) {
+            previousGamepad1.copy(currentGamepad1); //gamepad from last iteration
+            previousGamepad2.copy(currentGamepad2);
+            currentGamepad1.copy(gamepad1);
+            currentGamepad2.copy(gamepad2);
+
+            // Rising Edge Detector for (gamepad1.left_stick_button && gamepad1.right_stick_button)
+            if (gamepad1.circle && !previousGamepad1.circle) {
+                ZPBehaviorToggle = !ZPBehaviorToggle;
+            }
+            if (ZPBehaviorToggle) {
+                setZPBrake();
+            } else {
+                setZPFloat();
+            }
+
+            // Rising Edge Detector to dance
+            while ((gamepad1.left_stick_button && gamepad1.right_stick_button) && !(previousGamepad1.left_stick_button && previousGamepad1.right_stick_button)) {
+                happyDanceRobot();
+            }
+
             double max;
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
-            /*double axial   = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
+            /*
+            double axial   = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
             double lateral =  gamepad1.left_stick_x;
-            double yaw     =  gamepad1.right_stick_x;*/
-
-            double lefty = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
-            double leftx = gamepad1.left_stick_x;
-            double hypotenuse = Math.sqrt(Math.pow(leftx, 2) + Math.pow(lefty, 2)); //pythagorean theorem
-            //hypotenuse will always be positive, so make negative if needed
-
-            double leftFrontPower = 0;
-            double rightFrontPower = 0;
-            double leftBackPower = 0;
-            double rightBackPower = 0;
-
-            //https://gm0.org/en/latest/_images/mecanum-drive-directions.png
-            //https://cdn11.bigcommerce.com/s-x56mtydx1w/images/stencil/original/products/1445/7196/3213-3606-0002-Product-Insight-3__67245__45972.1701993091.png?c=1
-            leftFrontPower = 0;
-            rightFrontPower = 0;
-            leftBackPower = 0;
-            rightBackPower = 0;
-
-            if (lefty > 0 && leftx > 0) { //Q1
-                leftFrontPower = hypotenuse;
-                rightBackPower = hypotenuse;
-                //leftBackPower rightFrontPower are both 0
-            } else if (lefty > 0 && leftx < 0) { //Q2
-                leftBackPower = hypotenuse;
-                rightFrontPower = hypotenuse;
-                //leftFrontPower rightBackPower are both 0
-            }
-            //Q3 and Q4 are negative hypotenuses
-            else if (lefty < 0 && leftx < 0) { //Q3
-                leftFrontPower = -hypotenuse;
-                rightBackPower = -hypotenuse;
-                //leftBackPower rightFrontPower are both 0
-            } else if (lefty < 0 && leftx > 0) { //Q4
-                leftBackPower = -hypotenuse;
-                rightFrontPower = -hypotenuse;
-                //leftFrontPower rightBackPower are both 0
-            } else if ((gamepad1.dpad_left || gamepad1.dpad_right) || leftx != 0) { //lefty is 0
-                leftx = gamepad1.dpad_right ? 1 : (gamepad1.dpad_left ? -1 : leftx);
-                leftFrontPower = leftx;
-                rightFrontPower = -leftx;
-                leftBackPower = -leftx;
-                rightBackPower = leftx;
-            } else if ((gamepad1.dpad_down || gamepad1.dpad_up) || lefty != 0) { //leftx is 0
-                lefty = gamepad1.dpad_up ? 1 : (gamepad1.dpad_down ? -1 : lefty);
-                leftFrontPower = lefty;
-                rightFrontPower = lefty;
-                leftBackPower = lefty;
-                rightBackPower = lefty;
-            }
-
-            if (gamepad1.left_bumper) {
-                leftFrontPower  = -leftFrontPower;
-                //rightFrontPower = rightFrontPower;
-                leftBackPower   = -leftBackPower;
-                //rightBackPower  = rightBackPower;
-            } else if (gamepad1.right_bumper) {
-                //leftFrontPower  = leftFrontPower;
-                rightFrontPower = -rightFrontPower;
-                //leftBackPower   = leftBackPower;
-                rightBackPower  = -rightBackPower;
-            }
-
+            double yaw     =  gamepad1.right_stick_x;
+            */
             /*
             1) Axial:    Driving forward and backward               Left-joystick Forward/Backward
             2) Lateral:  Strafing right and left                     Left-joystick Right and Left
@@ -191,6 +166,82 @@ public class OmniOpMode extends LinearOpMode {
             double rightFrontPower = axial - lateral - yaw;
             double leftBackPower   = axial - lateral + yaw;
             double rightBackPower  = axial + lateral - yaw;*/
+
+            //hypotenuse = power
+            double lefty = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
+            double leftx = gamepad1.left_stick_x;
+            double hypotenuse = Math.sqrt(  Math.pow(leftx, 2)+Math.pow(lefty, 2)  ); //pythagorean theorem
+            //hypotenuse will always be positive, so make negative if needed
+
+            //slope = direction
+            double slope;
+            double righty = -gamepad1.right_stick_y;  // Note: pushing stick forward gives negative value
+            double rightx = gamepad1.right_stick_x;
+            if (rightx != 0) { //avoiding dividing by zero errors
+                slope = Math.abs(righty / rightx);
+            } else {
+                slope = righty; //rightx is 0 so only the lefty matters
+            }
+
+            /*
+            slope is basically the direction the robot is gonna go
+            hypotenuse is power
+
+            slope * hypotenuse is power for each wheel (hopefully)
+            */
+
+            double leftFrontPower  = hypotenuse;
+            double rightFrontPower = hypotenuse;
+            double leftBackPower   = hypotenuse;
+            double rightBackPower  = hypotenuse;
+
+            //https://gm0.org/en/latest/_images/mecanum-drive-directions.png
+            //https://cdn11.bigcommerce.com/s-x56mtydx1w/images/stencil/original/products/1445/7196/3213-3606-0002-Product-Insight-3__67245__45972.1701993091.png?c=1
+
+            //https://youtu.be/gnSW2QpkGXQ?si=lnVXFP7B3FyuYVPt - this video is EXTREMELY helpful
+            //https://seamonsters-2605.github.io/archive/mecanum/ - this website i found from reddit is helpful too
+
+            double theta = Math.atan(slope*(Math.PI/180)); //turn slope into rad into rad angle (atan is radian not degree so convert)
+            double Power1 = Math.sin(theta + Math.PI/4);
+            double Power2 = Math.sin(theta - Math.PI/4);
+
+            leftFrontPower *= Power1;
+            rightBackPower *= Power1;
+            leftBackPower *= Power2;
+            rightFrontPower *= Power2;
+
+            if (gamepad1.left_trigger != 0) {
+                leftFrontPower  -= gamepad1.left_trigger;
+                rightFrontPower += gamepad1.left_trigger;
+                leftBackPower   -= gamepad1.left_trigger;
+                rightBackPower  += gamepad1.left_trigger;
+            } else if (gamepad1.right_trigger != 0) {
+                leftFrontPower  += gamepad1.right_trigger;
+                rightFrontPower -= gamepad1.right_trigger;
+                leftBackPower   += gamepad1.right_trigger;
+                rightBackPower  -= gamepad1.right_trigger;
+            }
+            if (gamepad1.left_bumper) {
+                leftFrontPower  = 1;
+                rightFrontPower = -1;
+                leftBackPower   = 1;
+                rightBackPower  = -1;
+            } else if (gamepad1.right_bumper) {
+                leftFrontPower  = -1;
+                rightFrontPower = 1;
+                leftBackPower   = -1;
+                rightBackPower  = 1;
+            }
+
+            while (gamepad1.left_stick_button) //make the other controller rumble
+                gamepad2.rumble(1000);
+            while (gamepad2.left_stick_button)
+                gamepad1.rumble(1000);
+
+            if (gamepad1.right_stick_button) //stop rumbles
+                gamepad1.stopRumble();
+            if (gamepad2.right_stick_button)
+                gamepad2.stopRumble();
 
             // Normalize the values so no wheel  power exceeds 100%
             // This ensures that the robot maintains the desired motion.
@@ -234,5 +285,34 @@ public class OmniOpMode extends LinearOpMode {
             telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
             telemetry.update();
         }
+    }
+    private void happyDanceRobot() {
+        setZPFloat();
+        leftFrontDrive.setPower(1);
+        rightFrontDrive.setPower(-1);
+        leftBackDrive.setPower(1);
+        rightBackDrive.setPower(-1);
+        sleep(200);
+        leftFrontDrive.setPower(0);
+        rightFrontDrive.setPower(0);
+        leftBackDrive.setPower(0);
+        rightBackDrive.setPower(0);
+        sleep(200);
+        leftFrontDrive.setPower(-1);
+        rightFrontDrive.setPower(1);
+        leftBackDrive.setPower(-1);
+        rightBackDrive.setPower(1);
+    }
+    private void setZPFloat() {
+        leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+    }
+    private void setZPBrake() {
+        leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
 }
