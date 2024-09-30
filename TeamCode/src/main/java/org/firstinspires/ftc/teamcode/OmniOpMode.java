@@ -71,6 +71,10 @@ import com.qualcomm.robotcore.hardware.Gamepad.LedEffect;
 //git fetch --all
 //git reset --hard origin/master
 
+//BHI260AP
+
+
+
 @TeleOp(name="OpDickstein", group="OpMode")
 public class OmniOpMode extends LinearOpMode {
 
@@ -80,6 +84,7 @@ public class OmniOpMode extends LinearOpMode {
     private DcMotor leftBackDrive = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
+    private DcMotor SlideyDrive = null;
 
     @Override
     public void runOpMode() {
@@ -96,6 +101,8 @@ public class OmniOpMode extends LinearOpMode {
         rightFrontDrive = hardwareMap.get(DcMotor.class, "rightFront"); //Motor 1 = right front
         rightBackDrive = hardwareMap.get(DcMotor.class, "rightBack"); //Motor 2 = right bottom
         leftBackDrive = hardwareMap.get(DcMotor.class, "leftBack"); //Motor 3 = left bottom
+
+        SlideyDrive = hardwareMap.get(DcMotor.class, "slidey"); //Motor 3 = left bottom
 
         // ########################################################################################
         // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
@@ -162,7 +169,7 @@ public class OmniOpMode extends LinearOpMode {
         runtime.reset();
 
         // run until the end of the match (driver presses STOP)
-        boolean ZPBehaviorToggle = true; //True is brake
+        boolean ZPBehaviorToggle = true; //True is float
         while (opModeIsActive()) {
             previousGamepad1.copy(currentGamepad1); //gamepad from last iteration
             previousGamepad2.copy(currentGamepad2);
@@ -174,9 +181,9 @@ public class OmniOpMode extends LinearOpMode {
                 ZPBehaviorToggle = !ZPBehaviorToggle;
             }
             if (ZPBehaviorToggle) {
-                setZPBrake();
-            } else {
                 setZPFloat();
+            } else {
+                setZPBrake();
             }
 
             // Rising Edge Detector to dance
@@ -211,8 +218,12 @@ public class OmniOpMode extends LinearOpMode {
             //hypotenuse will always be positive, so make negative if needed
 
             //slope = direction
-            double righty = -gamepad1.right_stick_y;  // Note: pushing stick forward gives negative value
-            double rightx = gamepad1.right_stick_x;
+            double righty = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
+            double rightx = gamepad1.left_stick_x;
+
+            double Slidey = -gamepad1.right_stick_y;
+            SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+            SlideyDrive.setPower(Slidey);
 
             /*
             slope is basically the direction the robot is gonna go
@@ -252,14 +263,35 @@ public class OmniOpMode extends LinearOpMode {
                 leftBackPower   += gamepad1.right_trigger;
                 rightBackPower  -= gamepad1.right_trigger;
             }
-            if (gamepad1.left_bumper) {
+            if (gamepad1.right_bumper) {
                 leftFrontPower  = 1;
                 rightFrontPower = -1;
                 leftBackPower   = 1;
                 rightBackPower  = -1;
-            } else if (gamepad1.right_bumper) {
+            } else if (gamepad1.left_bumper) {
                 leftFrontPower  = -1;
                 rightFrontPower = 1;
+                leftBackPower   = -1;
+                rightBackPower  = 1;
+            }
+            if (gamepad1.dpad_up) {
+                leftFrontPower  = 1;
+                rightFrontPower = 1;
+                leftBackPower   = 1;
+                rightBackPower  = 1;
+            } else if (gamepad1.dpad_down) {
+                leftFrontPower  = -1;
+                rightFrontPower = -1;
+                leftBackPower   = -1;
+                rightBackPower  = -1;
+            } else if (gamepad1.dpad_left) {
+                leftFrontPower  = -1;
+                rightFrontPower = 1;
+                leftBackPower   = 1;
+                rightBackPower  = -1;
+            } else if (gamepad1.dpad_right) {
+                leftFrontPower  = 1;
+                rightFrontPower = -1;
                 leftBackPower   = -1;
                 rightBackPower  = 1;
             }
@@ -323,16 +355,17 @@ public class OmniOpMode extends LinearOpMode {
         rightFrontDrive.setPower(-1);
         leftBackDrive.setPower(1);
         rightBackDrive.setPower(-1);
-        sleep(200);
+        sleep(2000);
         leftFrontDrive.setPower(0);
         rightFrontDrive.setPower(0);
         leftBackDrive.setPower(0);
         rightBackDrive.setPower(0);
-        sleep(200);
+        sleep(2000);
         leftFrontDrive.setPower(-1);
         rightFrontDrive.setPower(1);
         leftBackDrive.setPower(-1);
         rightBackDrive.setPower(1);
+        sleep(2000);
     }
     private void setZPFloat() {
         leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
