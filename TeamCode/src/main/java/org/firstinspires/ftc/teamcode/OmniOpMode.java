@@ -29,12 +29,15 @@
 
 package org.firstinspires.ftc.teamcode;
 
+
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.hardware.Gamepad.RumbleEffect;
+import com.qualcomm.robotcore.hardware.Gamepad.LedEffect;
 
 /*
  * This file contains an example of a Linear "OpMode".
@@ -109,10 +112,6 @@ public class OmniOpMode extends LinearOpMode {
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
 
-        // Wait for the game to start (driver presses START)
-        telemetry.addData("Status", "Initialized");
-        telemetry.update();
-
         //rumble (just for funsies)
         RumbleEffect.Builder rumble = new RumbleEffect.Builder();
         for (double i=0;i<1;i+=.1){
@@ -120,7 +119,45 @@ public class OmniOpMode extends LinearOpMode {
             rumble = rumble.addStep(1-i, i, 100);
         }
         gamepad1.runRumbleEffect(rumble.build()); //hopefully this works, idk
+        gamepad2.runRumbleEffect(rumble.build());
 
+        //LED effects (also for funsies)
+        Gamepad.LedEffect.Builder Led = new LedEffect.Builder();
+        int DurationMs = 10;
+        double AddValue = .1;
+        // R to G
+        for (double i=0;i<10;i++) { //R to Black
+            double RoundedI = (Math.round(i * 100) / 100.0); //turns something like 3.00000004 into 3.0
+            Led = Led.addStep(1 - RoundedI, 0, 0, DurationMs);
+        }
+        for (double i=0;i<=1;i+=AddValue) { //Black to G
+            double RoundedI = (Math.round(i * 100) / 100.0);
+            Led = Led.addStep(0, RoundedI, 0, DurationMs);
+        }
+        // G to B
+        for (double i=0;i<10;i++) { //G to Black
+            double RoundedI = (Math.round(i * 100) / 100.0);
+            Led = Led.addStep(0, 1 - RoundedI, 0, DurationMs);
+        }
+        for (double i=0;i<=1;i+=AddValue) { //Black to B
+            double RoundedI = (Math.round(i * 100) / 100.0);
+            Led = Led.addStep(0, 0, RoundedI, DurationMs);
+        }
+        // B to R
+        for (double i=0;i<10;i++) { //B to Black
+            double RoundedI = (Math.round(i * 100) / 100.0);
+            Led = Led.addStep(0, 0, 1 - RoundedI, DurationMs);
+        }
+        for (double i=0;i<=1;i+=AddValue) { //Black to R
+            double RoundedI = (Math.round(i * 100) / 100.0);
+            Led = Led.addStep(RoundedI, 0, 0, DurationMs);
+        }
+        Led.setRepeating(true);
+        gamepad1.runLedEffect(Led.build());
+
+        // Wait for the game to start (driver presses START)
+        telemetry.addData("Status", "Initialized");
+        telemetry.update();
         waitForStart();
         runtime.reset();
 
@@ -174,14 +211,8 @@ public class OmniOpMode extends LinearOpMode {
             //hypotenuse will always be positive, so make negative if needed
 
             //slope = direction
-            double slope;
             double righty = -gamepad1.right_stick_y;  // Note: pushing stick forward gives negative value
             double rightx = gamepad1.right_stick_x;
-            if (rightx != 0) { //avoiding dividing by zero errors
-                slope = Math.abs(righty / rightx);
-            } else {
-                slope = righty; //rightx is 0 so only the lefty matters
-            }
 
             /*
             slope is basically the direction the robot is gonna go
@@ -201,14 +232,14 @@ public class OmniOpMode extends LinearOpMode {
             //https://youtu.be/gnSW2QpkGXQ?si=lnVXFP7B3FyuYVPt - this video is EXTREMELY helpful
             //https://seamonsters-2605.github.io/archive/mecanum/ - this website i found from reddit is helpful too
 
-            double theta = Math.atan(slope*(Math.PI/180)); //turn slope into rad into rad angle (atan is radian not degree so convert)
-            double Power1 = Math.sin(theta + Math.PI/4);
-            double Power2 = Math.sin(theta - Math.PI/4);
+            double theta = Math.atan2(righty, rightx); //turn slope into rad into a angle (atan is radian not degree so convert)
+            double Direction1 = Math.sin(theta + Math.PI/4); // https://www.desmos.com/calculator/rqqamhfeek
+            double Direction2 = Math.sin(theta - Math.PI/4); // https://www.desmos.com/calculator/dminewe5vs
 
-            leftFrontPower *= Power1;
-            rightBackPower *= Power1;
-            leftBackPower *= Power2;
-            rightFrontPower *= Power2;
+            leftFrontPower *= Direction1;
+            rightBackPower *= Direction1;
+            leftBackPower *= Direction2;
+            rightFrontPower *= Direction2;
 
             if (gamepad1.left_trigger != 0) {
                 leftFrontPower  -= gamepad1.left_trigger;
