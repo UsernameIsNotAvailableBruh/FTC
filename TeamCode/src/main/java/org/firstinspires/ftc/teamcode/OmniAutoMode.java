@@ -25,5 +25,39 @@ public class OmniAutoMode extends LinearOpMode {
         rightBackDrive = hardwareMap.get(DcMotor.class, "rightBack"); //Motor 2 = right bottom
         leftBackDrive = hardwareMap.get(DcMotor.class, "leftBack"); //Motor 3 = left bottom
 
+        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+
+        ResetEncoders();
+
+        int leftFrontPos = leftFrontDrive.getCurrentPosition();
+        int rightFrontPos = rightFrontDrive.getCurrentPosition();
+        int rightBackPos = rightBackDrive.getCurrentPosition();
+        int leftBackPos = leftBackDrive.getCurrentPosition();
+
+        telemetry.addData("Status", "Run Time: " + runtime.toString());
+        telemetry.addData("leftFrontPos", "%4.2d", leftFrontPos);
+        telemetry.addData("rightFrontPos", "%4.2d", rightFrontPos);
+        telemetry.addData("rightBackPos", "%4.2d", rightBackPos);
+        telemetry.addData("leftBackPos", "%4.2d", leftBackPos);
+        telemetry.update();
+    }
+    public void ResetEncoders(){
+        // Reset the motor encoder so that it reads zero ticks
+        leftFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        // Turn the motor back on, required if you use STOP_AND_RESET_ENCODER
+        leftFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        rightFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        rightBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        leftBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
     }
 }

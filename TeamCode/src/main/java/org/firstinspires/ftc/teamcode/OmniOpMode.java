@@ -31,13 +31,23 @@ package org.firstinspires.ftc.teamcode;
 
 
 
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
+
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.hardware.Gamepad.RumbleEffect;
+
 import com.qualcomm.robotcore.hardware.Gamepad.LedEffect;
+import com.qualcomm.robotcore.hardware.Gamepad.RumbleEffect;
+
+import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 /*
  * This file contains an example of a Linear "OpMode".
@@ -73,8 +83,6 @@ import com.qualcomm.robotcore.hardware.Gamepad.LedEffect;
 
 //BHI260AP
 
-
-
 @TeleOp(name="OpDickstein", group="OpMode")
 public class OmniOpMode extends LinearOpMode {
 
@@ -85,10 +93,10 @@ public class OmniOpMode extends LinearOpMode {
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
     private DcMotor SlideyDrive = null;
+    private IMU BHI260AP = null;
 
     @Override
     public void runOpMode() {
-
         //https://gm0.org/en/latest/docs/software/tutorials/gamepad.html#storing-gamepad-state
         Gamepad currentGamepad1 = new Gamepad();
         Gamepad currentGamepad2 = new Gamepad();
@@ -102,7 +110,17 @@ public class OmniOpMode extends LinearOpMode {
         rightBackDrive = hardwareMap.get(DcMotor.class, "rightBack"); //Motor 2 = right bottom
         leftBackDrive = hardwareMap.get(DcMotor.class, "leftBack"); //Motor 3 = left bottom
 
-        SlideyDrive = hardwareMap.get(DcMotor.class, "slidey"); //Motor 3 = left bottom
+        SlideyDrive = hardwareMap.get(DcMotor.class, "slidey");
+
+        BHI260AP = hardwareMap.get(IMU.class, "imu");
+
+        IMU.Parameters IMUParams = new IMU.Parameters(
+                new RevHubOrientationOnRobot(
+                        RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                        RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
+                )
+        );
+        BHI260AP.initialize(IMUParams);
 
         // ########################################################################################
         // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
@@ -119,6 +137,9 @@ public class OmniOpMode extends LinearOpMode {
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
 
+        telemetry.speak("Hopefully the driver hub is speaking and the speakers are speaker-ing", "en", "US");
+        telemetry.speak("i wonder if mister silva can hear this right now, the driver station thingy is literally speaking");
+
         //rumble (just for funsies)
         RumbleEffect.Builder rumble = new RumbleEffect.Builder();
         for (double i=0;i<1;i+=.1){
@@ -129,9 +150,9 @@ public class OmniOpMode extends LinearOpMode {
         gamepad2.runRumbleEffect(rumble.build());
 
         //LED effects (also for funsies)
-        Gamepad.LedEffect.Builder Led = new LedEffect.Builder();
-        int DurationMs = 10;
-        double AddValue = .1;
+        LedEffect.Builder Led = new LedEffect.Builder();
+        int DurationMs = 100;
+        double AddValue = .01;
         // R to G
         for (double i=0;i<10;i++) { //R to Black
             double RoundedI = (Math.round(i * 100) / 100.0); //turns something like 3.00000004 into 3.0
@@ -176,15 +197,21 @@ public class OmniOpMode extends LinearOpMode {
             currentGamepad1.copy(gamepad1);
             currentGamepad2.copy(gamepad2);
 
+            Orientation robotOrientation = BHI260AP.getRobotOrientation(
+                AxesReference.INTRINSIC,
+                AxesOrder.XYZ,
+                AngleUnit.RADIANS
+            );
+
             // Rising Edge Detector for (gamepad1.left_stick_button && gamepad1.right_stick_button)
             if (gamepad1.circle && !previousGamepad1.circle) {
                 ZPBehaviorToggle = !ZPBehaviorToggle;
             }
-            if (ZPBehaviorToggle) {
+            if (ZPBehaviorToggle)
                 setZPFloat();
-            } else {
+            else
                 setZPBrake();
-            }
+
 
             // Rising Edge Detector to dance
             while ((gamepad1.left_stick_button && gamepad1.right_stick_button) && !(previousGamepad1.left_stick_button && previousGamepad1.right_stick_button)) {
@@ -211,17 +238,13 @@ public class OmniOpMode extends LinearOpMode {
             double leftBackPower   = axial - lateral + yaw;
             double rightBackPower  = axial + lateral - yaw;*/
 
-            //hypotenuse = power
+            // hypotenuse = power
+            // slope = direction
             double lefty = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
             double leftx = gamepad1.left_stick_x;
             double hypotenuse = Math.sqrt(  Math.pow(leftx, 2)+Math.pow(lefty, 2)  ); //pythagorean theorem
-            //hypotenuse will always be positive, so make negative if needed
 
-            //slope = direction
-            double righty = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
-            double rightx = gamepad1.left_stick_x;
-
-            double Slidey = -gamepad1.right_stick_y;
+            double Slidey = -gamepad1.right_stick_y; //just for debugging
             SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
             SlideyDrive.setPower(Slidey);
 
@@ -243,7 +266,15 @@ public class OmniOpMode extends LinearOpMode {
             //https://youtu.be/gnSW2QpkGXQ?si=lnVXFP7B3FyuYVPt - this video is EXTREMELY helpful
             //https://seamonsters-2605.github.io/archive/mecanum/ - this website i found from reddit is helpful too
 
-            double theta = Math.atan2(righty, rightx); //turn slope into rad into a angle (atan is radian not degree so convert)
+            double theta = Math.atan2(lefty, leftx);
+            telemetry.addData("Theta value", "%4.2f", theta);
+            double Roll = robotOrientation.firstAngle; // X - Roll
+            double Pitch = robotOrientation.secondAngle; // Y - Pitch
+            double Yaw = robotOrientation.thirdAngle; // Z - Yaw
+
+            telemetry.addData("Roll", "%4.2f", Roll);
+            telemetry.addData("Pitch", "%4.2f", Pitch);
+            telemetry.addData("Yaw", "%4.2f", Yaw );
             double Direction1 = Math.sin(theta + Math.PI/4); // https://www.desmos.com/calculator/rqqamhfeek
             double Direction2 = Math.sin(theta - Math.PI/4); // https://www.desmos.com/calculator/dminewe5vs
 
@@ -355,17 +386,17 @@ public class OmniOpMode extends LinearOpMode {
         rightFrontDrive.setPower(-1);
         leftBackDrive.setPower(1);
         rightBackDrive.setPower(-1);
-        sleep(2000);
+        sleep(1500);
         leftFrontDrive.setPower(0);
         rightFrontDrive.setPower(0);
         leftBackDrive.setPower(0);
         rightBackDrive.setPower(0);
-        sleep(2000);
+        sleep(1000);
         leftFrontDrive.setPower(-1);
         rightFrontDrive.setPower(1);
         leftBackDrive.setPower(-1);
         rightBackDrive.setPower(1);
-        sleep(2000);
+        sleep(1500);
     }
     private void setZPFloat() {
         leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
