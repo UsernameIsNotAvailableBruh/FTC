@@ -49,6 +49,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
+import org.firstinspires.ftc.robotcore.external.android.AndroidTextToSpeech;
+
 /*
  * This file contains an example of a Linear "OpMode".
  * An OpMode is a 'program' that runs in either the autonomous or the teleop period of an FTC match.
@@ -137,7 +139,6 @@ public class OmniOpMode extends LinearOpMode {
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
 
-        telemetry.speak("Hi, I am self aware now. Hopefully the driver hub is speaking and the speakers are speaker-ing", "en", "US");
 
         //rumble (just for funsies)
         RumbleEffect.Builder rumble = new RumbleEffect.Builder();
@@ -150,10 +151,10 @@ public class OmniOpMode extends LinearOpMode {
 
         //LED effects (also for funsies)
         LedEffect.Builder Led = new LedEffect.Builder();
-        int DurationMs = 100;
-        double AddValue = .01;
+        int DurationMs = 10;
+        double AddValue = .05;
         // R to G
-        for (double i=0;i<10;i++) { //R to Black
+        for ( double i=0;i<=1;i+=AddValue) { //R to Black
             double RoundedI = (Math.round(i * 100) / 100.0); //turns something like 3.00000004 into 3.0
             Led = Led.addStep(1 - RoundedI, 0, 0, DurationMs);
         }
@@ -162,7 +163,7 @@ public class OmniOpMode extends LinearOpMode {
             Led = Led.addStep(0, RoundedI, 0, DurationMs);
         }
         // G to B
-        for (double i=0;i<10;i++) { //G to Black
+        for (double i=0;i<=1;i+=AddValue) { //G to Black
             double RoundedI = (Math.round(i * 100) / 100.0);
             Led = Led.addStep(0, 1 - RoundedI, 0, DurationMs);
         }
@@ -171,7 +172,7 @@ public class OmniOpMode extends LinearOpMode {
             Led = Led.addStep(0, 0, RoundedI, DurationMs);
         }
         // B to R
-        for (double i=0;i<10;i++) { //B to Black
+        for (double i=0;i<=1;i+=AddValue) { //B to Black
             double RoundedI = (Math.round(i * 100) / 100.0);
             Led = Led.addStep(0, 0, 1 - RoundedI, DurationMs);
         }
@@ -182,14 +183,20 @@ public class OmniOpMode extends LinearOpMode {
         Led.setRepeating(true);
         gamepad1.runLedEffect(Led.build());
 
+        sleep(5000);
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
         telemetry.update();
         waitForStart();
         runtime.reset();
 
+
+
+
+
         // run until the end of the match (driver presses STOP)
         boolean ZPBehaviorToggle = true; //True is float
+        double YawOffset = 0;
         while (opModeIsActive()) {
             previousGamepad1.copy(currentGamepad1); //gamepad from last iteration
             previousGamepad2.copy(currentGamepad2);
@@ -247,6 +254,9 @@ public class OmniOpMode extends LinearOpMode {
             SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             SlideyDrive.setPower(Slidey);
 
+            if (Slidey != 0)
+                SlideyDrive.setPower(Slidey);
+
             /*
             slope is basically the direction the robot is gonna go
             hypotenuse is power
@@ -275,7 +285,7 @@ public class OmniOpMode extends LinearOpMode {
             telemetry.addData("Pitch", "%4.2f", Pitch);
             telemetry.addData("Yaw", "%4.2f", Yaw );
 
-            double YawOffset = 0;
+
             if (gamepad1.cross)
                 YawOffset = resetYaw();
             
@@ -414,13 +424,12 @@ public class OmniOpMode extends LinearOpMode {
         leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
-    private double ResetYaw() {
+    private double resetYaw() {
         double Yaw = BHI260AP.getRobotOrientation(
                 AxesReference.INTRINSIC,
                 AxesOrder.XYZ,
                 AngleUnit.RADIANS
             ).thirdAngle;
-        BHI260AP.resetYaw();
         return Yaw;
     }
 }
