@@ -151,8 +151,8 @@ public class OmniOpMode extends LinearOpMode {
 
         //LED effects (also for funsies)
         LedEffect.Builder Led = new LedEffect.Builder();
-        int DurationMs = 10;
-        double AddValue = .05;
+        int DurationMs = 5;
+        double AddValue = 1.0/255;
         // R to G
         for ( double i=0;i<=1;i+=AddValue) { //R to Black
             double RoundedI = (Math.round(i * 100) / 100.0); //turns something like 3.00000004 into 3.0
@@ -183,16 +183,11 @@ public class OmniOpMode extends LinearOpMode {
         Led.setRepeating(true);
         gamepad1.runLedEffect(Led.build());
 
-        sleep(5000);
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
         telemetry.update();
         waitForStart();
         runtime.reset();
-
-
-
-
 
         // run until the end of the match (driver presses STOP)
         boolean ZPBehaviorToggle = true; //True is float
@@ -210,7 +205,7 @@ public class OmniOpMode extends LinearOpMode {
             );
 
             // Rising Edge Detector for (gamepad1.left_stick_button && gamepad1.right_stick_button)
-            if (gamepad1.square && !previousGamepad1.square) {
+            if (gamepad1.options && !previousGamepad1.options) {
                 ZPBehaviorToggle = !ZPBehaviorToggle;
             }
             if (ZPBehaviorToggle)
@@ -280,10 +275,10 @@ public class OmniOpMode extends LinearOpMode {
             double Pitch = robotOrientation.secondAngle; // Y - Pitch
             double Yaw   = robotOrientation.thirdAngle; // Z - Yaw
 
-            telemetry.addData("Theta value", "%4.2f", theta);
-            telemetry.addData("Roll", "%4.2f", Roll);
-            telemetry.addData("Pitch", "%4.2f", Pitch);
-            telemetry.addData("Yaw", "%4.2f", Yaw );
+            telemetry.addData("Theta value\t", "%4.2f", theta);
+            telemetry.addData("X - Roll\t", "%4.2f", Roll);
+            telemetry.addData("Y - Pitch\t", "%4.2f", Pitch);
+            telemetry.addData("Z - Yaw\t", "%4.2f", Yaw);
 
 
             if (gamepad1.cross)
@@ -417,12 +412,16 @@ public class OmniOpMode extends LinearOpMode {
         rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+
+        SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
     }
     private void setZPBrake() {
         leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
     private double resetYaw() {
         double Yaw = BHI260AP.getRobotOrientation(
