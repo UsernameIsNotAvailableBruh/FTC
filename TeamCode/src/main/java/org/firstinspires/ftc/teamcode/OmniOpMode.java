@@ -37,6 +37,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import com.qualcomm.robotcore.hardware.Gamepad.LedEffect;
@@ -96,6 +97,7 @@ public class OmniOpMode extends LinearOpMode {
     private DcMotor rightBackDrive  = null;
     private DcMotor SlideyDrive     = null;
     private IMU BHI260AP            = null;
+    private Servo HiTec             = null;
 
     @Override
     public void runOpMode() {
@@ -113,6 +115,8 @@ public class OmniOpMode extends LinearOpMode {
         leftBackDrive   = hardwareMap.get(DcMotor.class, "leftBack"); //Motor 3 = left bottom
 
         SlideyDrive = hardwareMap.get(DcMotor.class, "slidey");
+
+        HiTec = hardwareMap.get(Servo.class, "Servio");
 
         BHI260AP = hardwareMap.get(IMU.class, "imu");
 
@@ -139,7 +143,6 @@ public class OmniOpMode extends LinearOpMode {
         leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
-
 
         //rumble (just for funsies)
         RumbleEffect.Builder rumble = new RumbleEffect.Builder();
@@ -250,6 +253,9 @@ public class OmniOpMode extends LinearOpMode {
             SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             SlideyDrive.setPower(Slidey);
 
+            HiTec.setDirection(Servo.Direction.FORWARD);
+            HiTec.setPosition(Slidey);
+
             if (Slidey != 0)
                 SlideyDrive.setPower(Slidey);
 
@@ -276,15 +282,14 @@ public class OmniOpMode extends LinearOpMode {
             double Pitch = robotOrientation.secondAngle; // Y - Pitch
             double Yaw   = robotOrientation.thirdAngle; // Z - Yaw
 
+            if (gamepad1.cross && !previousGamepad1.cross)
+                YawOffset = resetYaw();
+
             telemetry.addData("Theta value\t", "%4.2f", theta);
             telemetry.addData("X - Roll\t", "%4.2f", Roll);
             telemetry.addData("Y - Pitch\t", "%4.2f", Pitch);
             telemetry.addData("Z - Yaw\t", "%4.2f", Yaw);
 
-
-            if (gamepad1.cross && !previousGamepad1.cross)
-                YawOffset = resetYaw();
-            
             double Direction1 = Math.sin(theta + Math.PI/4 - YawOffset); // https://www.desmos.com/calculator/rqqamhfeek
             double Direction2 = Math.sin(theta - Math.PI/4 - YawOffset); // https://www.desmos.com/calculator/dminewe5vs
 
@@ -317,6 +322,8 @@ public class OmniOpMode extends LinearOpMode {
                 rightBackPower  = 1;
             }
 
+            //TODO: add dpad stuff again, but with gyroscope stuff
+
             while (gamepad1.left_stick_button) //make the other controller rumble
                 gamepad2.rumble(100);
             while (gamepad2.left_stick_button)
@@ -339,6 +346,7 @@ public class OmniOpMode extends LinearOpMode {
                 leftBackPower   /= max;
                 rightBackPower  /= max;
             }
+
 
             // This is test code:
             //
