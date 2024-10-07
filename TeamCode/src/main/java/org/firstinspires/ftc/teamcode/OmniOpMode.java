@@ -123,6 +123,7 @@ public class OmniOpMode extends LinearOpMode {
                 )
         );
         BHI260AP.initialize(IMUParams);
+        BHI260AP.resetYaw();
 
         // ########################################################################################
         // !!!            IMPORTANT Drive Information. Test your motor directions.            !!!!!
@@ -151,8 +152,8 @@ public class OmniOpMode extends LinearOpMode {
 
         //LED effects (also for funsies)
         LedEffect.Builder Led = new LedEffect.Builder();
-        int DurationMs = 5;
-        double AddValue = 1.0/255;
+        int DurationMs = 10;
+        double AddValue = .01;
         // R to G
         for ( double i=0;i<=1;i+=AddValue) { //R to Black
             double RoundedI = (Math.round(i * 100) / 100.0); //turns something like 3.00000004 into 3.0
@@ -281,7 +282,7 @@ public class OmniOpMode extends LinearOpMode {
             telemetry.addData("Z - Yaw\t", "%4.2f", Yaw);
 
 
-            if (gamepad1.cross)
+            if (gamepad1.cross && !previousGamepad1.cross)
                 YawOffset = resetYaw();
             
             double Direction1 = Math.sin(theta + Math.PI/4 - YawOffset); // https://www.desmos.com/calculator/rqqamhfeek
@@ -303,6 +304,7 @@ public class OmniOpMode extends LinearOpMode {
                 leftBackPower   += gamepad1.right_trigger;
                 rightBackPower  -= gamepad1.right_trigger;
             }
+
             if (gamepad1.right_bumper) {
                 leftFrontPower  = 1;
                 rightFrontPower = -1;
@@ -311,27 +313,6 @@ public class OmniOpMode extends LinearOpMode {
             } else if (gamepad1.left_bumper) {
                 leftFrontPower  = -1;
                 rightFrontPower = 1;
-                leftBackPower   = -1;
-                rightBackPower  = 1;
-            }
-            if (gamepad1.dpad_up) {
-                leftFrontPower  = 1;
-                rightFrontPower = 1;
-                leftBackPower   = 1;
-                rightBackPower  = 1;
-            } else if (gamepad1.dpad_down) {
-                leftFrontPower  = -1;
-                rightFrontPower = -1;
-                leftBackPower   = -1;
-                rightBackPower  = -1;
-            } else if (gamepad1.dpad_left) {
-                leftFrontPower  = -1;
-                rightFrontPower = 1;
-                leftBackPower   = 1;
-                rightBackPower  = -1;
-            } else if (gamepad1.dpad_right) {
-                leftFrontPower  = 1;
-                rightFrontPower = -1;
                 leftBackPower   = -1;
                 rightBackPower  = 1;
             }
