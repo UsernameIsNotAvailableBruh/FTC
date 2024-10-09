@@ -328,37 +328,37 @@ public class OmniOpMode extends LinearOpMode {
                 double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOffset);
                 double Dpadirection2 = Math.sin(RAD - Math.PI/4 - YawOffset);
                 // Dpadirection1 is Dpadirection2
-                leftFrontPower  = Dpadirection1; // 1
-                rightFrontPower = Dpadirection2; // 1
-                leftBackPower   = Dpadirection2; // 1
-                rightBackPower  = Dpadirection1; // 1
+                leftFrontPower  = Dpadirection1 * hypotenuse; // 1
+                rightFrontPower = Dpadirection2 * hypotenuse; // 1
+                leftBackPower   = Dpadirection2 * hypotenuse; // 1
+                rightBackPower  = Dpadirection1 * hypotenuse; // 1
             } else if (gamepad1.dpad_down) {
                 double RAD = Math.PI*3.0/2;
                 double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOffset);
                 double Dpadirection2 = Math.sin(RAD - Math.PI/4 - YawOffset);
                 // Dpadirection1 is Dpadirection2
-                leftFrontPower  = Dpadirection1; // -1
-                rightFrontPower = Dpadirection2; // -1
-                leftBackPower   = Dpadirection2; // -1
-                rightBackPower  = Dpadirection1; // -1
+                leftFrontPower  = Dpadirection1 * hypotenuse; // -1
+                rightFrontPower = Dpadirection2 * hypotenuse; // -1
+                leftBackPower   = Dpadirection2 * hypotenuse; // -1
+                rightBackPower  = Dpadirection1 * hypotenuse; // -1
             } else if (gamepad1.dpad_left) {
                 double RAD = Math.PI*3.0/2;
                 double RAD2 = Math.PI/2;
                 double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOffset);  // -1
                 double Dpadirection2 = Math.sin(RAD2 - Math.PI/4 - YawOffset); //  1
-                leftFrontPower  = Dpadirection1; // -1
-                rightFrontPower = Dpadirection2; //  1
-                leftBackPower   = Dpadirection2; //  1
-                rightBackPower  = Dpadirection1; // -1
+                leftFrontPower  = Dpadirection1 * hypotenuse; // -1
+                rightFrontPower = Dpadirection2 * hypotenuse; //  1
+                leftBackPower   = Dpadirection2 * hypotenuse; //  1
+                rightBackPower  = Dpadirection1 * hypotenuse; // -1
             } else if (gamepad1.dpad_right) {
                 double RAD = Math.PI/2;
                 double RAD2 = Math.PI*3.0/2;
                 double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOffset);  // -1
                 double Dpadirection2 = Math.sin(RAD2 - Math.PI/4 - YawOffset); //  1
-                leftFrontPower  = Dpadirection1; //  1
-                rightFrontPower = Dpadirection2; // -1
-                leftBackPower   = Dpadirection2; // -1
-                rightBackPower  = Dpadirection1; //  1
+                leftFrontPower  = Dpadirection1 * hypotenuse; //  1
+                rightFrontPower = Dpadirection2 * hypotenuse; // -1
+                leftBackPower   = Dpadirection2 * hypotenuse; // -1
+                rightBackPower  = Dpadirection1 * hypotenuse; //  1
             }
 
             while (gamepad1.left_stick_button) //make the other controller rumble
