@@ -50,8 +50,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
-import org.firstinspires.ftc.robotcore.external.android.AndroidTextToSpeech;
-
 /*
  * This file contains an example of a Linear "OpMode".
  * An OpMode is a 'program' that runs in either the autonomous or the teleop period of an FTC match.
@@ -284,6 +282,8 @@ public class OmniOpMode extends LinearOpMode {
 
             if (gamepad1.cross && !previousGamepad1.cross)
                 YawOffset = resetYaw();
+            if (gamepad1.square && !previousGamepad1.square)
+                BHI260AP.resetYaw();
 
             telemetry.addData("Theta value\t", "%4.2f", theta);
             telemetry.addData("X - Roll\t", "%4.2f", Roll);
@@ -298,17 +298,16 @@ public class OmniOpMode extends LinearOpMode {
             leftBackPower   *= Direction2;
             rightFrontPower *= Direction2;
 
-            if (gamepad1.left_trigger != 0) {
-                leftFrontPower  -= gamepad1.left_trigger;
-                rightFrontPower += gamepad1.left_trigger;
-                leftBackPower   -= gamepad1.left_trigger;
-                rightBackPower  += gamepad1.left_trigger;
-            } else if (gamepad1.right_trigger != 0) {
-                leftFrontPower  += gamepad1.right_trigger;
-                rightFrontPower -= gamepad1.right_trigger;
-                leftBackPower   += gamepad1.right_trigger;
-                rightBackPower  -= gamepad1.right_trigger;
-            }
+
+            leftFrontPower  -= gamepad1.left_trigger;
+            rightFrontPower += gamepad1.left_trigger;
+            leftBackPower   -= gamepad1.left_trigger;
+            rightBackPower  += gamepad1.left_trigger;
+
+            leftFrontPower  += gamepad1.right_trigger;
+            rightFrontPower -= gamepad1.right_trigger;
+            leftBackPower   += gamepad1.right_trigger;
+            rightBackPower  -= gamepad1.right_trigger;
 
             if (gamepad1.right_bumper) {
                 leftFrontPower  = 1;
@@ -323,6 +322,44 @@ public class OmniOpMode extends LinearOpMode {
             }
 
             //TODO: add dpad stuff again, but with gyroscope stuff
+            if (gamepad1.dpad_up) {
+                //sin(Math.PI/2) is 1
+                double RAD = Math.PI/2;
+                double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOffset);
+                double Dpadirection2 = Math.sin(RAD - Math.PI/4 - YawOffset);
+                // Dpadirection1 is Dpadirection2
+                leftFrontPower  = Dpadirection1; // 1
+                rightFrontPower = Dpadirection2; // 1
+                leftBackPower   = Dpadirection2; // 1
+                rightBackPower  = Dpadirection1; // 1
+            } else if (gamepad1.dpad_down) {
+                double RAD = Math.PI*3.0/2;
+                double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOffset);
+                double Dpadirection2 = Math.sin(RAD - Math.PI/4 - YawOffset);
+                // Dpadirection1 is Dpadirection2
+                leftFrontPower  = Dpadirection1; // -1
+                rightFrontPower = Dpadirection2; // -1
+                leftBackPower   = Dpadirection2; // -1
+                rightBackPower  = Dpadirection1; // -1
+            } else if (gamepad1.dpad_left) {
+                double RAD = Math.PI*3.0/2;
+                double RAD2 = Math.PI/2;
+                double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOffset);  // -1
+                double Dpadirection2 = Math.sin(RAD2 - Math.PI/4 - YawOffset); //  1
+                leftFrontPower  = Dpadirection1; // -1
+                rightFrontPower = Dpadirection2; //  1
+                leftBackPower   = Dpadirection2; //  1
+                rightBackPower  = Dpadirection1; // -1
+            } else if (gamepad1.dpad_right) {
+                double RAD = Math.PI/2;
+                double RAD2 = Math.PI*3.0/2;
+                double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOffset);  // -1
+                double Dpadirection2 = Math.sin(RAD2 - Math.PI/4 - YawOffset); //  1
+                leftFrontPower  = Dpadirection1; //  1
+                rightFrontPower = Dpadirection2; // -1
+                leftBackPower   = Dpadirection2; // -1
+                rightBackPower  = Dpadirection1; //  1
+            }
 
             while (gamepad1.left_stick_button) //make the other controller rumble
                 gamepad2.rumble(100);
