@@ -298,29 +298,6 @@ public class OmniOpMode extends LinearOpMode {
             leftBackPower   *= Direction2;
             rightFrontPower *= Direction2;
 
-
-            leftFrontPower  -= gamepad1.left_trigger;
-            rightFrontPower += gamepad1.left_trigger;
-            leftBackPower   -= gamepad1.left_trigger;
-            rightBackPower  += gamepad1.left_trigger;
-
-            leftFrontPower  += gamepad1.right_trigger;
-            rightFrontPower -= gamepad1.right_trigger;
-            leftBackPower   += gamepad1.right_trigger;
-            rightBackPower  -= gamepad1.right_trigger;
-
-            if (gamepad1.right_bumper) {
-                leftFrontPower  = 1;
-                rightFrontPower = -1;
-                leftBackPower   = 1;
-                rightBackPower  = -1;
-            } else if (gamepad1.left_bumper) {
-                leftFrontPower  = -1;
-                rightFrontPower = 1;
-                leftBackPower   = -1;
-                rightBackPower  = 1;
-            }
-
             //TODO: add dpad stuff again, but with gyroscope stuff
             if (gamepad1.dpad_up) {
                 //sin(Math.PI/2) is 1
@@ -359,6 +336,32 @@ public class OmniOpMode extends LinearOpMode {
                 rightFrontPower = Dpadirection2 * hypotenuse; // -1
                 leftBackPower   = Dpadirection2 * hypotenuse; // -1
                 rightBackPower  = Dpadirection1 * hypotenuse; //  1
+            }
+
+            if (gamepad1.left_trigger != 0 || gamepad1.right_trigger != 0) {
+                leftFrontPower -= gamepad1.left_trigger;
+                rightFrontPower += gamepad1.left_trigger;
+                leftBackPower -= gamepad1.left_trigger;
+                rightBackPower += gamepad1.left_trigger;
+
+                leftFrontPower += gamepad1.right_trigger;
+                rightFrontPower -= gamepad1.right_trigger;
+                leftBackPower += gamepad1.right_trigger;
+                rightBackPower -= gamepad1.right_trigger;
+                YawOffset = resetYaw();
+            }
+            if (gamepad1.right_bumper) {
+                leftFrontPower  = 1;
+                rightFrontPower = -1;
+                leftBackPower   = 1;
+                rightBackPower  = -1;
+                YawOffset = resetYaw();
+            } else if (gamepad1.left_bumper) {
+                leftFrontPower  = -1;
+                rightFrontPower = 1;
+                leftBackPower   = -1;
+                rightBackPower  = 1;
+                YawOffset = resetYaw();
             }
 
             while (gamepad1.left_stick_button) //make the other controller rumble
