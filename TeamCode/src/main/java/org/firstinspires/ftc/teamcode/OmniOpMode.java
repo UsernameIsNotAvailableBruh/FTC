@@ -137,10 +137,10 @@ public class OmniOpMode extends LinearOpMode {
         // when you first test your robot, push the left joystick forward and observe the direction the wheels turn.
         // Reverse the direction (flip FORWARD <-> REVERSE ) of any wheel that runs backward
         // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward.
-        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
 
         //rumble (just for funsies)
         RumbleEffect.Builder rumble = new RumbleEffect.Builder();
@@ -248,8 +248,8 @@ public class OmniOpMode extends LinearOpMode {
             double hypotenuse = Math.sqrt(  Math.pow(leftx, 2)+Math.pow(lefty, 2)  ); //pythagorean theorem
 
             double Slidey = -gamepad1.right_stick_y; //just for debugging
-            SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-            SlideyDrive.setPower(Slidey);
+            //SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            //SlideyDrive.setPower(Slidey);
 
             HiTec.setDirection(Servo.Direction.FORWARD);
             HiTec.setPosition(Slidey);
