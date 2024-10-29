@@ -96,6 +96,7 @@ public class OmniOpMode extends LinearOpMode {
     private DcMotor SlideyDrive     = null;
     private IMU BHI260AP            = null;
     private Servo HiTec             = null;
+    private DcMotor ActuatorDrive   = null;
 
     @Override
     public void runOpMode() {
@@ -113,6 +114,7 @@ public class OmniOpMode extends LinearOpMode {
         leftBackDrive   = hardwareMap.get(DcMotor.class, "leftBack"); //Motor 3 = left bottom
 
         SlideyDrive = hardwareMap.get(DcMotor.class, "slidey");
+        ActuatorDrive = hardwareMap.get(DcMotor.class, "actorio");
 
         HiTec = hardwareMap.get(Servo.class, "Servio");
 
@@ -153,8 +155,8 @@ public class OmniOpMode extends LinearOpMode {
 
         //LED effects (also for funsies)
         LedEffect.Builder Led = new LedEffect.Builder();
-        int DurationMs = 10;
-        double AddValue = .01;
+        int DurationMs = 1;
+        double AddValue = .1;
         // R to G
         for ( double i=0;i<=1;i+=AddValue) { //R to Black
             double RoundedI = (Math.round(i * 100) / 100.0); //turns something like 3.00000004 into 3.0
@@ -247,15 +249,14 @@ public class OmniOpMode extends LinearOpMode {
             double leftx = gamepad1.left_stick_x;
             double hypotenuse = Math.sqrt(  Math.pow(leftx, 2)+Math.pow(lefty, 2)  ); //pythagorean theorem
 
-            double Slidey = -gamepad1.right_stick_y; //just for debugging
+            double Slidey = -gamepad2.right_stick_y; //just for debugging
+            double Acturio = -gamepad2.right_stick_y; //just for debugging
             //SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-            //SlideyDrive.setPower(Slidey);
 
-            HiTec.setDirection(Servo.Direction.FORWARD);
-            HiTec.setPosition(Slidey);
+            //HiTec.setDirection(Servo.Direction.FORWARD);
+            //HiTec.setPosition(Slidey);
 
-            if (Slidey != 0)
-                SlideyDrive.setPower(Slidey);
+            SlideyDrive.setPower(Slidey);
 
             /*
             slope is basically the direction the robot is gonna go
