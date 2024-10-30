@@ -32,16 +32,25 @@ public class OmniAutoMode extends LinearOpMode {
 
         ResetEncoders();
 
-        int leftFrontPos = leftFrontDrive.getCurrentPosition();
-        int rightFrontPos = rightFrontDrive.getCurrentPosition();
-        int rightBackPos = rightBackDrive.getCurrentPosition();
-        int leftBackPos = leftBackDrive.getCurrentPosition();
+        int leftFrontEncoderPos = leftFrontDrive.getCurrentPosition();
+        int rightFrontEncoderPos = rightFrontDrive.getCurrentPosition();
+        int rightBackEncoderPos = rightBackDrive.getCurrentPosition();
+        int leftBackEncoderPos = leftBackDrive.getCurrentPosition();
+
+        double GearRatio3 =  2.89;
+        double GearRatio4 = 3.61;
+        double GearRatio5 = 5.23;
+        double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
 
         telemetry.addData("Status", "Run Time: " + runtime.toString());
         telemetry.addData("leftFrontPos", "%4.2d", leftFrontPos);
         telemetry.addData("rightFrontPos", "%4.2d", rightFrontPos);
         telemetry.addData("rightBackPos", "%4.2d", rightBackPos);
         telemetry.addData("leftBackPos", "%4.2d", leftBackPos);
+
+        telemetry.addData("Encoder Front left/Right", "%4.2f, %4.2f", leftFrontEncoderPos, rightFrontEncoderPos);
+        telemetry.addData("Encoder Back  left/Right", "%4.2f, %4.2f", leftBackEncoderPos, rightBackEncoderPos);
+
         telemetry.update();
     }
     public void ResetEncoders(){
