@@ -32,6 +32,7 @@ package org.firstinspires.ftc.teamcode;
 
 
 
+import com.qualcomm.hardware.motors.RevRoboticsUltraPlanetaryHdHexMotor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -144,6 +145,21 @@ public class OmniOpMode extends LinearOpMode {
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
 
+        leftFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rightBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        leftFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        rightBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        leftBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        double GearRatio3 =  2.89;
+        double GearRatio4 = 3.61;
+        double GearRatio5 = 5.23;
+        double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
+
         //rumble (just for funsies)
         RumbleEffect.Builder rumble = new RumbleEffect.Builder();
         for (double i=0;i<1;i+=.1){
@@ -207,6 +223,11 @@ public class OmniOpMode extends LinearOpMode {
                 AxesOrder.XYZ,
                 AngleUnit.RADIANS
             );
+
+            int leftFrontDriveEncoderPos  = leftFrontDrive.getCurrentPosition();
+            int rightFrontDriveEncoderPos = rightFrontDrive.getCurrentPosition();
+            int rightBackDriveEncoderPos  = rightBackDrive.getCurrentPosition();
+            int leftBackDriveEncoderPos   = leftBackDrive.getCurrentPosition();
 
             // Rising Edge Detector for (gamepad1.left_stick_button && gamepad1.right_stick_button)
             if (gamepad1.options && !previousGamepad1.options) {
@@ -406,6 +427,8 @@ public class OmniOpMode extends LinearOpMode {
             rightBackPower  = gamepad1.b ? 1.0 : 0.0;  // B gamepad
             */
 
+
+
             // Send calculated power to wheels
             leftFrontDrive.setPower(leftFrontPower);
             rightFrontDrive.setPower(rightFrontPower);
@@ -416,6 +439,10 @@ public class OmniOpMode extends LinearOpMode {
             telemetry.addData("Status", "Run Time: " + runtime.toString());
             telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
             telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
+
+            telemetry.addData("Encoder Front left/Right", "%4.2f, %4.2f", leftFrontDriveEncoderPos, rightFrontDriveEncoderPos);
+            telemetry.addData("Encoder Back  left/Right", "%4.2f, %4.2f", rightBackDriveEncoderPos, leftBackDriveEncoderPos);
+
             telemetry.update();
         }
     }
