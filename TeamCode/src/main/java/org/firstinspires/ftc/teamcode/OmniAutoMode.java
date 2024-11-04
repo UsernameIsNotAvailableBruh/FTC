@@ -42,14 +42,41 @@ public class OmniAutoMode extends LinearOpMode {
         double GearRatio5 = 5.23;
         double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
 
-        telemetry.addData("Status", "Run Time: " + runtime.toString());
-        telemetry.addData("leftFrontPos", "%4.2d", leftFrontPos);
-        telemetry.addData("rightFrontPos", "%4.2d", rightFrontPos);
-        telemetry.addData("rightBackPos", "%4.2d", rightBackPos);
-        telemetry.addData("leftBackPos", "%4.2d", leftBackPos);
+        double goBILDAWheel = 3.77953; //96 mm -> in
+        double WheelCircum = Math.PI * goBILDAWheel;
 
-        telemetry.addData("Encoder Front left/Right", "%4.2f, %4.2f", leftFrontEncoderPos, rightFrontEncoderPos);
-        telemetry.addData("Encoder Back  left/Right", "%4.2f, %4.2f", leftBackEncoderPos, rightBackEncoderPos);
+        double LFRevolutions = leftFrontEncoderPos/DriveHDHexMotorCPR;
+        double LBRevolutions = leftBackEncoderPos/DriveHDHexMotorCPR;
+        double RFRevolutions = rightFrontEncoderPos/DriveHDHexMotorCPR;
+        double RBRevolutions = rightBackEncoderPos/DriveHDHexMotorCPR;
+
+        double LFAngle = LFRevolutions*360%360;
+        double LBAngle = LBRevolutions*360%360;
+        double RFAngle = RFRevolutions*360%360;
+        double RBAngle = RBRevolutions*360%360;
+
+        double LFDistance = WheelCircum*LFRevolutions;
+        double LBDistance = WheelCircum*LBRevolutions;
+        double RFDistance = WheelCircum*RFRevolutions;
+        double RBDistance = WheelCircum*RBRevolutions;
+
+        leftFrontDrive.setTargetPosition(1000); // Tells the motor that the position it should go to is desiredPosition
+        leftFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        leftFrontDrive.setPower(0.5);
+
+        telemetry.addData("Status", "Run Time: " + runtime.toString());
+        telemetry.addLine("Encoder");
+        telemetry.addData("LF/RF Encoder", "%4.2f, %4.2f", leftFrontEncoderPos, rightFrontEncoderPos);
+        telemetry.addData("LB/RB Encoder", "%4.2f, %4.2f", leftBackEncoderPos, rightBackEncoderPos);
+        telemetry.addLine("Revolution");
+        telemetry.addData("LF/RF Revolutions", "%4.2f, %4.2f",LFRevolutions, RFRevolutions);
+        telemetry.addData("LB/RB Revolutions", "%4.2f, %4.2f",LBRevolutions, RBRevolutions);
+        telemetry.addLine("Angle");
+        telemetry.addData("LF/RF Angle", "%4.2f, %4.2f", LFAngle, RFAngle);
+        telemetry.addData("LB/RB Angle", "%4.2f, %4.2f", LBAngle, RBAngle);
+        telemetry.addLine("Distance");
+        telemetry.addData("LF/RF Distance", "%4.2f, %4.2f", LFDistance, RFDistance);
+        telemetry.addData("LB/RB Distance", "%4.2f, %4.2f", LBDistance, RBDistance);
 
         telemetry.update();
     }
