@@ -105,8 +105,8 @@ public class ServoClaw extends LinearOpMode {
             rumble = rumble.addStep(i, 1 - i, 100);
             rumble = rumble.addStep(1 - i, i, 100);
         }
-        gamepad1.runRumbleEffect(rumble.build()); //hopefully this works, idk
-        gamepad2.runRumbleEffect(rumble.build());
+        //gamepad1.runRumbleEffect(rumble.build()); //hopefully this works, idk
+        //gamepad2.runRumbleEffect(rumble.build());
 
         //LED effects (also for funsies)
         LedEffect.Builder Led = new LedEffect.Builder();
@@ -142,8 +142,10 @@ public class ServoClaw extends LinearOpMode {
         Led.setRepeating(true);
         gamepad1.runLedEffect(Led.build());
         gamepad2.runLedEffect(Led.build());
-
+        LeftServo.setDirection(Servo.Direction.REVERSE);
         // Wait for the game to start (driver presses START)
+        LeftServo.setPosition(0);
+        RightServo.setPosition(0);
         telemetry.addData("Status", "Initialized");
         telemetry.update();
         waitForStart();
@@ -155,19 +157,15 @@ public class ServoClaw extends LinearOpMode {
             previousGamepad2.copy(currentGamepad2);
             currentGamepad1.copy(gamepad1);
             currentGamepad2.copy(gamepad2);
-
-            LeftServo.setPosition(gamepad1.left_stick_x);
-            LeftServo.setDirection(Servo.Direction.REVERSE);
-            RightServo.setPosition(gamepad1.right_stick_x);
             
-            if (gamepad1.cross && previousGamepad1.cross) {
-                LeftServo.setPosition(.35);
-                RightServo.setPosition(.35);
+            if (gamepad1.cross && previousGamepad1.cross && !ClawToggle) {
+                LeftServo.setPosition(0);
+                RightServo.setPosition(0);
                 ClawToggle = true;
             }
             else if (gamepad1.cross && previousGamepad1.cross && ClawToggle) {
-                LeftServo.setPosition(0);
-                RightServo.setPosition(0);
+                LeftServo.setPosition(.5);
+                RightServo.setPosition(.5);
                 ClawToggle = false;
             }
 

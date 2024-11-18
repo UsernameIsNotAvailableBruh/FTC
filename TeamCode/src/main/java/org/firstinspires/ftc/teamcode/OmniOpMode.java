@@ -96,7 +96,9 @@ public class OmniOpMode extends LinearOpMode {
     private DcMotor rightBackDrive  = null;
     private DcMotor SlideyDrive     = null;
     private IMU BHI260AP            = null;
-    private Servo HiTec             = null;
+    private Servo LeftServo         = null;
+    private Servo RightServo        = null;
+    private Servo TurnServo         = null;
     private DcMotor ActuatorDrive   = null;
 
     @Override
@@ -117,7 +119,9 @@ public class OmniOpMode extends LinearOpMode {
         SlideyDrive = hardwareMap.get(DcMotor.class, "slidey");
         ActuatorDrive = hardwareMap.get(DcMotor.class, "actorio");
 
-        HiTec = hardwareMap.get(Servo.class, "Servio");
+        LeftServo = hardwareMap.get(Servo.class, "serv1");
+        RightServo = hardwareMap.get(Servo.class, "serv2");
+        TurnServo = hardwareMap.get(Servo.class, "serv3");
 
         BHI260AP = hardwareMap.get(IMU.class, "imu");
 
@@ -171,8 +175,8 @@ public class OmniOpMode extends LinearOpMode {
 
         //LED effects (also for funsies)
         LedEffect.Builder Led = new LedEffect.Builder();
-        int DurationMs = 1;
-        double AddValue = .1;
+        int DurationMs = 10;
+        double AddValue = .01;
         // R to G
         for ( double i=0;i<=1;i+=AddValue) { //R to Black
             double RoundedI = (Math.round(i * 100) / 100.0); //turns something like 3.00000004 into 3.0
@@ -202,7 +206,6 @@ public class OmniOpMode extends LinearOpMode {
         }
         Led.setRepeating(true);
         gamepad1.runLedEffect(Led.build());
-
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -273,9 +276,6 @@ public class OmniOpMode extends LinearOpMode {
             double Slidey = -gamepad2.right_stick_y; //just for debugging
             double Acturio = -gamepad2.right_stick_y; //just for debugging
             //SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-            //HiTec.setDirection(Servo.Direction.FORWARD);
-            //HiTec.setPosition(Slidey);
 
             SlideyDrive.setPower(Slidey);
 
@@ -386,9 +386,9 @@ public class OmniOpMode extends LinearOpMode {
                 YawOffset = resetYaw();
             }
 
-            while (gamepad1.left_stick_button) //make the other controller rumble
+            if (gamepad1.left_stick_button) //make the other controller rumble
                 gamepad2.rumble(100);
-            while (gamepad2.left_stick_button)
+            if (gamepad2.left_stick_button)
                 gamepad1.rumble(100);
 
             if (gamepad1.right_stick_button) //stop rumbles
@@ -426,8 +426,6 @@ public class OmniOpMode extends LinearOpMode {
             rightFrontPower = gamepad1.y ? 1.0 : 0.0;  // Y gamepad
             rightBackPower  = gamepad1.b ? 1.0 : 0.0;  // B gamepad
             */
-
-
 
             // Send calculated power to wheels
             leftFrontDrive.setPower(leftFrontPower);
