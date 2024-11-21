@@ -119,7 +119,7 @@ public class OmniOpMode extends LinearOpMode {
         SlideyDrive = hardwareMap.get(DcMotor.class, "slidey");
         ActuatorDrive = hardwareMap.get(DcMotor.class, "actorio");
 
-        LeftServo = hardwareMap.get(Servo.class, "serv1");
+        LeftServo = hardwareMap.get(Servo.class, "serv1"); //the one closer to the linear slider
         RightServo = hardwareMap.get(Servo.class, "serv2");
         TurnServo = hardwareMap.get(Servo.class, "serv3");
 
@@ -170,8 +170,8 @@ public class OmniOpMode extends LinearOpMode {
             rumble = rumble.addStep(i, 1-i, 100);
             rumble = rumble.addStep(1-i, i, 100);
         }
-        gamepad1.runRumbleEffect(rumble.build()); //hopefully this works, idk
-        gamepad2.runRumbleEffect(rumble.build());
+        //gamepad1.runRumbleEffect(rumble.build()); //hopefully this works, idk
+        //gamepad2.runRumbleEffect(rumble.build());
 
         //LED effects (also for funsies)
         LedEffect.Builder Led = new LedEffect.Builder();
@@ -214,7 +214,11 @@ public class OmniOpMode extends LinearOpMode {
 
         // run until the end of the match (driver presses STOP)
         boolean ZPBehaviorToggle = true; //True is float
+        boolean ClawToggle = true;
         double YawOffset = 0;
+        RightServo.setDirection(Servo.Direction.REVERSE);
+        LeftServo.setPosition(0);
+        RightServo.setPosition(0);
         while (opModeIsActive()) {
             previousGamepad1.copy(currentGamepad1); //gamepad from last iteration
             previousGamepad2.copy(currentGamepad2);
@@ -242,10 +246,29 @@ public class OmniOpMode extends LinearOpMode {
                 setZPBrake();
 
 
-            // Rising Edge Detector to dance
-            while ((gamepad1.left_stick_button && gamepad1.right_stick_button) && !(previousGamepad1.left_stick_button && previousGamepad1.right_stick_button)) {
-                happyDanceRobot();
+            //claw stuff
+            //SlideyDrive.setPower(-gamepad2.left_stick_y);
+            //ActuatorDrive.setPower(-gamepad2.right_stick_y);
+            if ((gamepad2.cross && !previousGamepad2.cross) || (gamepad2.cross && !previousGamepad2.cross)) {
+                ClawToggle = !ClawToggle;
             }
+            if (ClawToggle) {
+                LeftServo.setPosition(.6);
+                RightServo.setPosition(.6);
+            }
+            else if (!ClawToggle) {
+                LeftServo.setPosition(0);
+                RightServo.setPosition(0);
+            }
+
+
+            if (gamepad2.left_stick_button){
+                TurnServo.setPosition(-gamepad2.left_stick_x);
+            }
+            // Rising Edge Detector to dance
+            // while ((gamepad1.left_stick_button && gamepad1.right_stick_button) && !(previousGamepad1.left_stick_button && previousGamepad1.right_stick_button)) {
+            //     happyDanceRobot();
+            // }
 
             double max;
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
@@ -275,9 +298,9 @@ public class OmniOpMode extends LinearOpMode {
 
             double Slidey = -gamepad2.right_stick_y; //just for debugging
             double Acturio = -gamepad2.right_stick_y; //just for debugging
-            //SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-            SlideyDrive.setPower(Slidey);
+            SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            //SlideyDrive.setPower(Slidey);
 
             /*
             slope is basically the direction the robot is gonna go
@@ -320,58 +343,58 @@ public class OmniOpMode extends LinearOpMode {
             leftBackPower   *= Direction2;
             rightFrontPower *= Direction2;
 
-            //TODO: add dpad stuff again, but with gyroscope stuff
-            if (gamepad1.dpad_up) {
-                //sin(Math.PI/2) is 1
-                double RAD = Math.PI/2;
-                double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOffset);
-                double Dpadirection2 = Math.sin(RAD - Math.PI/4 - YawOffset);
-                // Dpadirection1 is Dpadirection2
-                leftFrontPower  = Dpadirection1 * hypotenuse; // 1
-                rightFrontPower = Dpadirection2 * hypotenuse; // 1
-                leftBackPower   = Dpadirection2 * hypotenuse; // 1
-                rightBackPower  = Dpadirection1 * hypotenuse; // 1
-            } else if (gamepad1.dpad_down) {
-                double RAD = Math.PI*3.0/2;
-                double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOffset);
-                double Dpadirection2 = Math.sin(RAD - Math.PI/4 - YawOffset);
-                // Dpadirection1 is Dpadirection2
-                leftFrontPower  = Dpadirection1 * hypotenuse; // -1
-                rightFrontPower = Dpadirection2 * hypotenuse; // -1
-                leftBackPower   = Dpadirection2 * hypotenuse; // -1
-                rightBackPower  = Dpadirection1 * hypotenuse; // -1
-            } else if (gamepad1.dpad_left) {
-                double RAD = Math.PI*3.0/2;
-                double RAD2 = Math.PI/2;
-                double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOffset);  // -1
-                double Dpadirection2 = Math.sin(RAD2 - Math.PI/4 - YawOffset); //  1
-                leftFrontPower  = Dpadirection1 * hypotenuse; // -1
-                rightFrontPower = Dpadirection2 * hypotenuse; //  1
-                leftBackPower   = Dpadirection2 * hypotenuse; //  1
-                rightBackPower  = Dpadirection1 * hypotenuse; // -1
-            } else if (gamepad1.dpad_right) {
-                double RAD = Math.PI/2;
-                double RAD2 = Math.PI*3.0/2;
-                double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOffset);  // -1
-                double Dpadirection2 = Math.sin(RAD2 - Math.PI/4 - YawOffset); //  1
-                leftFrontPower  = Dpadirection1 * hypotenuse; //  1
-                rightFrontPower = Dpadirection2 * hypotenuse; // -1
-                leftBackPower   = Dpadirection2 * hypotenuse; // -1
-                rightBackPower  = Dpadirection1 * hypotenuse; //  1
-            }
+            // TODO: add dpad stuff again, but with gyroscope stuff
+            //if (gamepad1.dpad_up) {
+            //    //sin(Math.PI/2) is 1
+            //    double RAD = Math.PI/2;
+            //    double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOffset);
+            //    double Dpadirection2 = Math.sin(RAD - Math.PI/4 - YawOffset);
+            //    // Dpadirection1 is Dpadirection2
+            //    leftFrontPower  = Dpadirection1 * hypotenuse; // 1
+            //    rightFrontPower = Dpadirection2 * hypotenuse; // 1
+            //    leftBackPower   = Dpadirection2 * hypotenuse; // 1
+            //    rightBackPower  = Dpadirection1 * hypotenuse; // 1
+            //} else if (gamepad1.dpad_down) {
+            //    double RAD = Math.PI*3.0/2;
+            //    double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOffset);
+            //    double Dpadirection2 = Math.sin(RAD - Math.PI/4 - YawOffset);
+            //    // Dpadirection1 is Dpadirection2
+            //    leftFrontPower  = Dpadirection1 * hypotenuse; // -1
+            //    rightFrontPower = Dpadirection2 * hypotenuse; // -1
+            //    leftBackPower   = Dpadirection2 * hypotenuse; // -1
+            //    rightBackPower  = Dpadirection1 * hypotenuse; // -1
+            //} else if (gamepad1.dpad_left) {
+            //    double RAD = Math.PI*3.0/2;
+            //    double RAD2 = Math.PI/2;
+            //    double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOffset);  // -1
+            //    double Dpadirection2 = Math.sin(RAD2 - Math.PI/4 - YawOffset); //  1
+            //    leftFrontPower  = Dpadirection1 * hypotenuse; // -1
+            //    rightFrontPower = Dpadirection2 * hypotenuse; //  1
+            //    leftBackPower   = Dpadirection2 * hypotenuse; //  1
+            //    rightBackPower  = Dpadirection1 * hypotenuse; // -1
+            //} else if (gamepad1.dpad_right) {
+            //    double RAD = Math.PI/2;
+            //    double RAD2 = Math.PI*3.0/2;
+            //    double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOffset);  // -1
+            //    double Dpadirection2 = Math.sin(RAD2 - Math.PI/4 - YawOffset); //  1
+            //    leftFrontPower  = Dpadirection1 * hypotenuse; //  1
+            //    rightFrontPower = Dpadirection2 * hypotenuse; // -1
+            //    leftBackPower   = Dpadirection2 * hypotenuse; // -1
+            //    rightBackPower  = Dpadirection1 * hypotenuse; //  1
+            //}
 
-            if (gamepad1.left_trigger != 0 || gamepad1.right_trigger != 0) {
-                leftFrontPower -= gamepad1.left_trigger;
-                rightFrontPower += gamepad1.left_trigger;
-                leftBackPower -= gamepad1.left_trigger;
-                rightBackPower += gamepad1.left_trigger;
 
-                leftFrontPower += gamepad1.right_trigger;
-                rightFrontPower -= gamepad1.right_trigger;
-                leftBackPower += gamepad1.right_trigger;
-                rightBackPower -= gamepad1.right_trigger;
-                YawOffset = resetYaw();
-            }
+            leftFrontPower -= gamepad1.left_trigger;
+            rightFrontPower += gamepad1.left_trigger;
+            leftBackPower -= gamepad1.left_trigger;
+            rightBackPower += gamepad1.left_trigger;
+
+            leftFrontPower += gamepad1.right_trigger;
+            rightFrontPower -= gamepad1.right_trigger;
+            leftBackPower += gamepad1.right_trigger;
+            rightBackPower -= gamepad1.right_trigger;
+            YawOffset = resetYaw();
+
             if (gamepad1.right_bumper) {
                 leftFrontPower  = 1;
                 rightFrontPower = -1;
@@ -435,8 +458,10 @@ public class OmniOpMode extends LinearOpMode {
 
             // Show the elapsed game time and wheel power.
             telemetry.addData("Status", "Run Time: " + runtime.toString());
+            telemetry.addData("Mem", "Run Time: " + Runtime.getRuntime().totalMemory());
             telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
             telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
+            telemetry.addData("Left, Right, Turn", "%4.2f, %4.2f, %4.2f", LeftServo.getPosition(), RightServo.getPosition(), TurnServo.getPosition());
             telemetry.update();
         }
     }
