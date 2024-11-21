@@ -215,10 +215,12 @@ public class OmniOpMode extends LinearOpMode {
         // run until the end of the match (driver presses STOP)
         boolean ZPBehaviorToggle = true; //True is float
         boolean ClawToggle = true;
+        boolean ClawToggle2 = true;
         double YawOffset = 0;
         RightServo.setDirection(Servo.Direction.REVERSE);
         LeftServo.setPosition(0);
         RightServo.setPosition(0);
+        BHI260AP.resetYaw();
         while (opModeIsActive()) {
             previousGamepad1.copy(currentGamepad1); //gamepad from last iteration
             previousGamepad2.copy(currentGamepad2);
@@ -250,7 +252,7 @@ public class OmniOpMode extends LinearOpMode {
             //SlideyDrive.setPower(-gamepad2.left_stick_y);
             //ActuatorDrive.setPower(-gamepad2.right_stick_y);
             if ((gamepad2.cross && !previousGamepad2.cross) || (gamepad2.cross && !previousGamepad2.cross)) {
-                ClawToggle = !ClawToggle;
+                ClawToggle = !ClawToggle; //if its true make it false, if its false make it true
             }
             if (ClawToggle) {
                 LeftServo.setPosition(.6);
@@ -261,6 +263,15 @@ public class OmniOpMode extends LinearOpMode {
                 RightServo.setPosition(0);
             }
 
+            if ((gamepad2.circle && !previousGamepad2.circle) || (gamepad2.circle && !previousGamepad2.circle)) {
+                ClawToggle2 = !ClawToggle2;
+            }
+            if (ClawToggle2) {
+                TurnServo.setPosition(.5);
+            }
+            else if (!ClawToggle2) {
+                TurnServo.setPosition(0);
+            }
 
             if (gamepad2.left_stick_button){
                 TurnServo.setPosition(-gamepad2.left_stick_x);
