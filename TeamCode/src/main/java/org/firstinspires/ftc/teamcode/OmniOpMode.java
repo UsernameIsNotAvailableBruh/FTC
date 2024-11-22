@@ -153,11 +153,13 @@ public class OmniOpMode extends LinearOpMode {
         rightFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        SlideyDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         leftFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         leftBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        SlideyDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         double GearRatio3 =  2.89;
         double GearRatio4 = 3.61;
@@ -220,6 +222,7 @@ public class OmniOpMode extends LinearOpMode {
         RightServo.setDirection(Servo.Direction.REVERSE);
         LeftServo.setPosition(0);
         RightServo.setPosition(0);
+        TurnServo.setPosition(.1);
         BHI260AP.resetYaw();
         while (opModeIsActive()) {
             previousGamepad1.copy(currentGamepad1); //gamepad from last iteration
@@ -251,12 +254,12 @@ public class OmniOpMode extends LinearOpMode {
             //claw stuff
             //SlideyDrive.setPower(-gamepad2.left_stick_y);
             //ActuatorDrive.setPower(-gamepad2.right_stick_y);
-            if ((gamepad2.cross && !previousGamepad2.cross) || (gamepad2.cross && !previousGamepad2.cross)) {
+            if ((gamepad2.cross && !previousGamepad2.cross) || (gamepad2.cross && previousGamepad2.cross)) {
                 ClawToggle = !ClawToggle; //if its true make it false, if its false make it true
             }
             if (ClawToggle) {
-                LeftServo.setPosition(.6);
-                RightServo.setPosition(.6);
+                LeftServo.setPosition(.7);
+                RightServo.setPosition(.7);
             }
             else if (!ClawToggle) {
                 LeftServo.setPosition(0);
@@ -267,14 +270,14 @@ public class OmniOpMode extends LinearOpMode {
                 ClawToggle2 = !ClawToggle2;
             }
             if (ClawToggle2) {
-                TurnServo.setPosition(.5);
+                TurnServo.setPosition(.1);
             }
             else if (!ClawToggle2) {
                 TurnServo.setPosition(0);
             }
 
-            if (gamepad2.left_stick_button){
-                TurnServo.setPosition(-gamepad2.left_stick_x);
+            if (gamepad2.left_bumper){
+                TurnServo.setPosition(gamepad2.left_trigger);
             }
             // Rising Edge Detector to dance
             // while ((gamepad1.left_stick_button && gamepad1.right_stick_button) && !(previousGamepad1.left_stick_button && previousGamepad1.right_stick_button)) {
@@ -307,11 +310,11 @@ public class OmniOpMode extends LinearOpMode {
             double leftx = gamepad1.left_stick_x;
             double hypotenuse = Math.sqrt(  Math.pow(leftx, 2)+Math.pow(lefty, 2)  ); //pythagorean theorem
 
-            double Slidey = -gamepad2.right_stick_y; //just for debugging
-            double Acturio = -gamepad2.right_stick_y; //just for debugging
+            double Slidey = -gamepad2.right_stick_y;
+            double Acturio = -gamepad2.right_stick_y;
 
             SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-            //SlideyDrive.setPower(Slidey);
+            SlideyDrive.setPower(Slidey);
 
             /*
             slope is basically the direction the robot is gonna go
