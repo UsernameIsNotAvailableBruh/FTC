@@ -36,6 +36,7 @@ import com.qualcomm.hardware.motors.RevRoboticsUltraPlanetaryHdHexMotor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
 import com.qualcomm.robotcore.hardware.Servo;
@@ -119,9 +120,9 @@ public class OmniOpMode extends LinearOpMode {
         SlideyDrive = hardwareMap.get(DcMotor.class, "slidey");
         ActuatorDrive = hardwareMap.get(DcMotor.class, "actorio");
 
-        LeftServo = hardwareMap.get(Servo.class, "serv1"); //the one closer to the linear slider
-        RightServo = hardwareMap.get(Servo.class, "serv2");
-        TurnServo = hardwareMap.get(Servo.class, "serv3");
+        LeftServo = hardwareMap.get(Servo.class, "serv1"); //port 0 - the one closer to the linear slider
+        RightServo = hardwareMap.get(Servo.class, "serv2"); //port 1
+        TurnServo = hardwareMap.get(Servo.class, "serv3"); //port 2
 
         BHI260AP = hardwareMap.get(IMU.class, "imu");
 
@@ -148,6 +149,9 @@ public class OmniOpMode extends LinearOpMode {
         leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        SlideyDrive.setDirection(DcMotor.Direction.REVERSE);
+        ActuatorDrive.setDirection(DcMotor.Direction.REVERSE);
+
 
         leftFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -254,26 +258,26 @@ public class OmniOpMode extends LinearOpMode {
             //claw stuff
             //SlideyDrive.setPower(-gamepad2.left_stick_y);
             //ActuatorDrive.setPower(-gamepad2.right_stick_y);
-            if ((gamepad2.cross && !previousGamepad2.cross) || (gamepad2.cross && previousGamepad2.cross)) {
+            if (gamepad2.cross && !previousGamepad2.cross) {
                 ClawToggle = !ClawToggle; //if its true make it false, if its false make it true
             }
             if (ClawToggle) {
-                LeftServo.setPosition(.7);
-                RightServo.setPosition(.7);
+                LeftServo.setPosition(.5);
+                RightServo.setPosition(.5);
             }
             else if (!ClawToggle) {
                 LeftServo.setPosition(0);
                 RightServo.setPosition(0);
             }
 
-            if ((gamepad2.circle && !previousGamepad2.circle) || (gamepad2.circle && !previousGamepad2.circle)) {
+            if (gamepad2.circle && !previousGamepad2.circle) {
                 ClawToggle2 = !ClawToggle2;
             }
             if (ClawToggle2) {
                 TurnServo.setPosition(.1);
             }
             else if (!ClawToggle2) {
-                TurnServo.setPosition(0);
+                TurnServo.setPosition(.55);
             }
 
             if (gamepad2.left_bumper){
@@ -311,10 +315,13 @@ public class OmniOpMode extends LinearOpMode {
             double hypotenuse = Math.sqrt(  Math.pow(leftx, 2)+Math.pow(lefty, 2)  ); //pythagorean theorem
 
             double Slidey = -gamepad2.right_stick_y;
-            double Acturio = -gamepad2.right_stick_y;
+            double Acturio = -gamepad2.left_stick_y;
 
             SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             SlideyDrive.setPower(Slidey);
+
+            ActuatorDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            ActuatorDrive.setPower(Acturio);
 
             /*
             slope is basically the direction the robot is gonna go
