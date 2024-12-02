@@ -32,11 +32,9 @@ package org.firstinspires.ftc.teamcode;
 
 
 
-import com.qualcomm.hardware.motors.RevRoboticsUltraPlanetaryHdHexMotor;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
 import com.qualcomm.robotcore.hardware.Servo;
@@ -180,36 +178,10 @@ public class OmniOpMode extends LinearOpMode {
         //gamepad2.runRumbleEffect(rumble.build());
 
         //LED effects (also for funsies)
-        LedEffect.Builder Led = new LedEffect.Builder();
         int DurationMs = 10;
         double AddValue = .01;
-        // R to G
-        for ( double i=0;i<=1;i+=AddValue) { //R to Black
-            double RoundedI = (Math.round(i * 100) / 100.0); //turns something like 3.00000004 into 3.0
-            Led = Led.addStep(1 - RoundedI, 0, 0, DurationMs);
-        }
-        for (double i=0;i<=1;i+=AddValue) { //Black to G
-            double RoundedI = (Math.round(i * 100) / 100.0);
-            Led = Led.addStep(0, RoundedI, 0, DurationMs);
-        }
-        // G to B
-        for (double i=0;i<=1;i+=AddValue) { //G to Black
-            double RoundedI = (Math.round(i * 100) / 100.0);
-            Led = Led.addStep(0, 1 - RoundedI, 0, DurationMs);
-        }
-        for (double i=0;i<=1;i+=AddValue) { //Black to B
-            double RoundedI = (Math.round(i * 100) / 100.0);
-            Led = Led.addStep(0, 0, RoundedI, DurationMs);
-        }
-        // B to R
-        for (double i=0;i<=1;i+=AddValue) { //B to Black
-            double RoundedI = (Math.round(i * 100) / 100.0);
-            Led = Led.addStep(0, 0, 1 - RoundedI, DurationMs);
-        }
-        for (double i=0;i<=1;i+=AddValue) { //Black to R
-            double RoundedI = (Math.round(i * 100) / 100.0);
-            Led = Led.addStep(RoundedI, 0, 0, DurationMs);
-        }
+        Effects effects = new Effects(AddValue, DurationMs);
+        LedEffect.Builder Led = effects.RGB;
         Led.setRepeating(true);
         gamepad1.runLedEffect(Led.build());
         // Wait for the game to start (driver presses START)

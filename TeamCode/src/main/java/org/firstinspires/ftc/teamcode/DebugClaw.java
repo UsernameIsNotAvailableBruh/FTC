@@ -35,7 +35,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.Servo.Direction;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import com.qualcomm.robotcore.hardware.Gamepad.LedEffect;
@@ -77,7 +76,7 @@ import com.qualcomm.robotcore.hardware.Gamepad.RumbleEffect;
 //BHI260AP
 
 @TeleOp(name="OpDickstein", group="OpMode")
-public class ServoClaw extends LinearOpMode {
+public class DebugClaw extends LinearOpMode {
 
     // Declare OpMode members for each of the 4 motors.
     private ElapsedTime runtime = new ElapsedTime();
