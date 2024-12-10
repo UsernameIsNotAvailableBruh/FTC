@@ -99,7 +99,7 @@ public class OmniOpMode extends LinearOpMode {
     private Servo RightServo        = null;
     private Servo TurnServo         = null;
     private DcMotor ActuatorDrive   = null;
-
+    private Servo ExtendyServo       = null;
     @Override
     public void runOpMode() {
         //https://gm0.org/en/latest/docs/software/tutorials/gamepad.html#storing-gamepad-state
@@ -121,6 +121,7 @@ public class OmniOpMode extends LinearOpMode {
         LeftServo = hardwareMap.get(Servo.class, "serv1"); //port 0 - the one closer to the linear slider
         RightServo = hardwareMap.get(Servo.class, "serv2"); //port 1
         TurnServo = hardwareMap.get(Servo.class, "serv3"); //port 2
+        ExtendyServo = hardwareMap.get(Servo.class, "Extendy"); //port 3
 
         BHI260AP = hardwareMap.get(IMU.class, "imu");
 
@@ -194,6 +195,7 @@ public class OmniOpMode extends LinearOpMode {
         boolean ZPBehaviorToggle = true; //True is float
         boolean ClawToggle = true;
         boolean ClawToggle2 = true;
+        boolean LowPowerMode = false;
         double YawOffset = 0;
         RightServo.setDirection(Servo.Direction.REVERSE);
         LeftServo.setPosition(0);
@@ -226,7 +228,6 @@ public class OmniOpMode extends LinearOpMode {
             else
                 setZPBrake();
 
-
             //claw stuff
             //SlideyDrive.setPower(-gamepad2.left_stick_y);
             //ActuatorDrive.setPower(-gamepad2.right_stick_y);
@@ -255,6 +256,14 @@ public class OmniOpMode extends LinearOpMode {
             if (gamepad2.left_bumper){
                 TurnServo.setPosition(gamepad2.left_trigger);
             }
+
+            if (gamepad1.dpad_left) {
+                ExtendyServo.setPosition(ExtendyServo.getPosition()+.01);
+            }
+            if (gamepad1.dpad_right) {
+                ExtendyServo.setPosition(ExtendyServo.getPosition()-.01);
+            }
+
             // Rising Edge Detector to dance
             // while ((gamepad1.left_stick_button && gamepad1.right_stick_button) && !(previousGamepad1.left_stick_button && previousGamepad1.right_stick_button)) {
             //     happyDanceRobot();
@@ -412,6 +421,14 @@ public class OmniOpMode extends LinearOpMode {
             if (gamepad2.right_stick_button)
                 gamepad2.stopRumble();
 
+
+            if (LowPowerMode) {
+                leftFrontPower /= 1.5;
+                rightFrontPower /= 1.5;
+                leftBackPower /= 1.5;
+                rightBackPower /= 1.5;
+            }
+
             // Normalize the values so no wheel  power exceeds 100%
             // This ensures that the robot maintains the desired motion.
             max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
@@ -442,6 +459,7 @@ public class OmniOpMode extends LinearOpMode {
             rightFrontPower = gamepad1.y ? 1.0 : 0.0;  // Y gamepad
             rightBackPower  = gamepad1.b ? 1.0 : 0.0;  // B gamepad
             */
+
 
             // Send calculated power to wheels
             leftFrontDrive.setPower(leftFrontPower);
