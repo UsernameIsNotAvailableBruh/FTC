@@ -97,9 +97,10 @@ public class OmniOpMode extends LinearOpMode {
     private IMU BHI260AP            = null;
     private Servo LeftServo         = null;
     private Servo RightServo        = null;
-    private Servo TurnServo         = null;
-    private DcMotor ActuatorDrive   = null;
-    private Servo ExtendyServo       = null;
+    //private Servo TurnServo         = null;
+    //private DcMotor ActuatorDrive   = null;
+    //private Servo ExtendyServo       = null;
+    private DcMotor SlideyMoveDrive = null;
     @Override
     public void runOpMode() {
         //https://gm0.org/en/latest/docs/software/tutorials/gamepad.html#storing-gamepad-state
@@ -116,12 +117,11 @@ public class OmniOpMode extends LinearOpMode {
         leftBackDrive   = hardwareMap.get(DcMotor.class, "leftBack"); //Motor 3 = left bottom
 
         SlideyDrive = hardwareMap.get(DcMotor.class, "slidey");
-        ActuatorDrive = hardwareMap.get(DcMotor.class, "actorio");
+        SlideyMoveDrive = hardwareMap.get(DcMotor.class, "slidey2");
+        //ActuatorDrive = hardwareMap.get(DcMotor.class, "actorio");
 
         LeftServo = hardwareMap.get(Servo.class, "serv1"); //port 0 - the one closer to the linear slider
         RightServo = hardwareMap.get(Servo.class, "serv2"); //port 1
-        TurnServo = hardwareMap.get(Servo.class, "serv3"); //port 2
-        ExtendyServo = hardwareMap.get(Servo.class, "Extendy"); //port 3
 
         BHI260AP = hardwareMap.get(IMU.class, "imu");
 
@@ -149,7 +149,7 @@ public class OmniOpMode extends LinearOpMode {
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
         SlideyDrive.setDirection(DcMotor.Direction.REVERSE);
-        ActuatorDrive.setDirection(DcMotor.Direction.REVERSE);
+        //ActuatorDrive.setDirection(DcMotor.Direction.REVERSE);
 
 
         leftFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -200,7 +200,6 @@ public class OmniOpMode extends LinearOpMode {
         RightServo.setDirection(Servo.Direction.REVERSE);
         LeftServo.setPosition(0);
         RightServo.setPosition(0);
-        TurnServo.setPosition(.1);
         BHI260AP.resetYaw();
         while (opModeIsActive()) {
             previousGamepad1.copy(currentGamepad1); //gamepad from last iteration
@@ -243,26 +242,7 @@ public class OmniOpMode extends LinearOpMode {
                 RightServo.setPosition(0);
             }
 
-            if (gamepad2.circle && !previousGamepad2.circle) {
-                ClawToggle2 = !ClawToggle2;
-            }
-            if (ClawToggle2) {
-                TurnServo.setPosition(.1);
-            }
-            else if (!ClawToggle2) {
-                TurnServo.setPosition(.55);
-            }
-
-            if (gamepad2.left_bumper){
-                TurnServo.setPosition(gamepad2.left_trigger);
-            }
-
-            if (gamepad1.dpad_left) {
-                ExtendyServo.setPosition(ExtendyServo.getPosition()+.01);
-            }
-            if (gamepad1.dpad_right) {
-                ExtendyServo.setPosition(ExtendyServo.getPosition()-.01);
-            }
+            SlideyMoveDrive.setPower((gamepad2.left_trigger-gamepad2.right_trigger));
 
             // Rising Edge Detector to dance
             // while ((gamepad1.left_stick_button && gamepad1.right_stick_button) && !(previousGamepad1.left_stick_button && previousGamepad1.right_stick_button)) {
@@ -301,8 +281,8 @@ public class OmniOpMode extends LinearOpMode {
             SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             SlideyDrive.setPower(Slidey);
 
-            ActuatorDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-            ActuatorDrive.setPower(Acturio);
+//            ActuatorDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//            ActuatorDrive.setPower(Acturio);
 
             /*
             slope is basically the direction the robot is gonna go
@@ -472,7 +452,7 @@ public class OmniOpMode extends LinearOpMode {
             telemetry.addData("Mem", "Run Time: " + Runtime.getRuntime().totalMemory());
             telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
             telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
-            telemetry.addData("Left, Right, Turn", "%4.2f, %4.2f, %4.2f", LeftServo.getPosition(), RightServo.getPosition(), TurnServo.getPosition());
+            telemetry.addData("Left, Right, Turn", "%4.2f, %4.2f", LeftServo.getPosition(), RightServo.getPosition());
             telemetry.update();
         }
     }
