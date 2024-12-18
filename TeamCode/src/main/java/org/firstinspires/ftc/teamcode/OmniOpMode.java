@@ -194,7 +194,7 @@ public class OmniOpMode extends LinearOpMode {
         // run until the end of the match (driver presses STOP)
         boolean ZPBehaviorToggle = true; //True is float
         boolean ClawToggle = true;
-        boolean ClawToggle2 = true;
+        boolean ExtendToggle = true;
         boolean LowPowerMode = false;
         double YawOffset = 0;
         RightServo.setDirection(Servo.Direction.REVERSE);
@@ -237,9 +237,13 @@ public class OmniOpMode extends LinearOpMode {
                 LeftServo.setPosition(.5);
                 RightServo.setPosition(.5);
             }
-            else if (!ClawToggle) {
+            else {
                 LeftServo.setPosition(0);
                 RightServo.setPosition(0);
+            }
+
+            if (gamepad1.share){
+                LowPowerMode = !LowPowerMode;
             }
 
             SlideyMoveDrive.setPower((gamepad2.left_trigger-gamepad2.right_trigger));
@@ -276,7 +280,7 @@ public class OmniOpMode extends LinearOpMode {
             double hypotenuse = Math.sqrt(  Math.pow(leftx, 2)+Math.pow(lefty, 2)  ); //pythagorean theorem
 
             double Slidey = -gamepad2.right_stick_y;
-            double Acturio = -gamepad2.left_stick_y;
+//            double Acturio = -gamepad2.left_stick_y;
 
             SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             SlideyDrive.setPower(Slidey);
@@ -311,11 +315,6 @@ public class OmniOpMode extends LinearOpMode {
                 YawOffset = resetYaw();
             if (gamepad1.square && !previousGamepad1.square)
                 BHI260AP.resetYaw();
-
-            telemetry.addData("Theta value\t", "%4.2f", theta);
-            telemetry.addData("X - Roll\t", "%4.2f", Roll);
-            telemetry.addData("Y - Pitch\t", "%4.2f", Pitch);
-            telemetry.addData("Z - Yaw\t", "%4.2f", Yaw);
 
             double Direction1 = Math.sin(theta + Math.PI/4 - YawOffset); // https://www.desmos.com/calculator/rqqamhfeek
             double Direction2 = Math.sin(theta - Math.PI/4 - YawOffset); // https://www.desmos.com/calculator/dminewe5vs
@@ -401,7 +400,6 @@ public class OmniOpMode extends LinearOpMode {
             if (gamepad2.right_stick_button)
                 gamepad2.stopRumble();
 
-
             if (LowPowerMode) {
                 leftFrontPower /= 1.5;
                 rightFrontPower /= 1.5;
@@ -448,8 +446,15 @@ public class OmniOpMode extends LinearOpMode {
             rightBackDrive.setPower(rightBackPower);
 
             // Show the elapsed game time and wheel power.
+
+            telemetry.addData("Theta value\t", "%4.2f", theta);
+            telemetry.addData("X - Roll\t", "%4.2f", Roll);
+            telemetry.addData("Y - Pitch\t", "%4.2f", Pitch);
+            telemetry.addData("Z - Yaw\t", "%4.2f", Yaw);
+
             telemetry.addData("Status", "Run Time: " + runtime.toString());
-            telemetry.addData("Mem", "Run Time: " + Runtime.getRuntime().totalMemory());
+            telemetry.addData("Mem", "Run Time: " + Runtime.getRuntime().maxMemory());
+            telemetry.addData("Mem", "Run Time: " + Runtime.getRuntime().freeMemory());
             telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
             telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
             telemetry.addData("Left, Right, Turn", "%4.2f, %4.2f", LeftServo.getPosition(), RightServo.getPosition());

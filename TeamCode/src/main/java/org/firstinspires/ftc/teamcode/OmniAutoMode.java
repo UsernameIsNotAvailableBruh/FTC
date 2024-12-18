@@ -4,7 +4,12 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 //import com.qualcomm.robotcore.eventloop.opmode.OpMode; lower level version of LinearOpMode
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 
 @Autonomous(name="AutoDickstein", group = "OpDicksteinModes")
 public class OmniAutoMode extends LinearOpMode {
@@ -15,6 +20,8 @@ public class OmniAutoMode extends LinearOpMode {
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
 
+
+    private static IMU BHI260AP = hardwareMap.get(IMU.class, "imu");
     @Override
     public void runOpMode() {
         waitForStart();
@@ -60,7 +67,7 @@ public class OmniAutoMode extends LinearOpMode {
         double RFDistance = WheelCircum*RFRevolutions;
         double RBDistance = WheelCircum*RBRevolutions;
 
-        GotoPosition(1000); // Tells the motor that the position it should go to is desiredPosition
+        GotoPositionForward(1000); // Tells the motor that the position it should go to is desiredPosition
 
 
         telemetry.addData("Status", "Run Time: " + runtime.toString());
@@ -80,7 +87,8 @@ public class OmniAutoMode extends LinearOpMode {
         telemetry.update();
         sleep(1000);  // pause to display final telemetry message.
     }
-    public void ResetEncoders(){
+
+    public void ResetEncoders() {
         // Reset the motor encoder so that it reads zero ticks
         leftFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         // Turn the motor back on, required if you use STOP_AND_RESET_ENCODER
@@ -96,21 +104,74 @@ public class OmniAutoMode extends LinearOpMode {
         leftBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
-    public void GotoPosition(int Pos){
+    public void GotoPositionForward(int Pos) {
         leftFrontDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
         leftFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        leftFrontDrive.setPower(0.5);
 
         rightFrontDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
         rightFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        rightFrontDrive.setPower(0.5);
 
         rightBackDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
         rightBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        rightBackDrive.setPower(0.5);
 
         leftBackDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
         leftBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        leftBackDrive.setPower(0.5);
+
+        setPowerALL(0.5);
+    }
+
+    public void setPowerALL(double Power) {
+        rightFrontDrive.setPower(Power);
+        rightBackDrive.setPower(Power);
+        leftFrontDrive.setPower(Power);
+        leftBackDrive.setPower(Power);
+    }
+
+    public void GotoPositionForwardInches(int Pos, double Power) {
+        leftFrontDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
+        leftFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        rightFrontDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
+        rightFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        rightBackDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
+        rightBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        leftBackDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
+        leftBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        setPowerALL(Power);
+    }
+
+    public void Angle(int theta, double Power) {
+        double YawOffset = BHI260AP.getRobotOrientation(
+                AxesReference.INTRINSIC,
+                AxesOrder.XYZ,
+                AngleUnit.RADIANS
+        ).thirdAngle;
+
+        double Direction1 = Math.sin(theta + Math.PI/4 - YawOffset); // https://www.desmos.com/calculator/rqqamhfeek
+        double Direction2 = Math.sin(theta - Math.PI/4 - YawOffset); // https://www.desmos.com/calculator/dminewe5vs
+
+        double leftFrontPower  = Direction1;
+        double rightBackPower  = Direction1;
+        double leftBackPower   = Direction2;
+        double rightFrontPower = Direction2;
+
+        leftFrontDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
+        leftFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        leftFrontDrive.setPower(leftFrontPower);
+
+        rightFrontDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
+        rightFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rightFrontDrive.setPower(rightFrontPower);
+
+        rightBackDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
+        rightBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        rightBackDrive.setPower(rightBackPower);
+
+        leftBackDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
+        leftBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        leftBackDrive.setPower(leftBackPower);
     }
 }
