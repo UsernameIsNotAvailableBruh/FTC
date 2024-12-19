@@ -97,9 +97,9 @@ public class OmniOpMode extends LinearOpMode {
     private IMU BHI260AP            = null;
     private Servo LeftServo         = null;
     private Servo RightServo        = null;
+    private Servo ExtendyServo       = null;
     //private Servo TurnServo         = null;
     //private DcMotor ActuatorDrive   = null;
-    //private Servo ExtendyServo       = null;
     private DcMotor SlideyMoveDrive = null;
     @Override
     public void runOpMode() {
@@ -122,6 +122,7 @@ public class OmniOpMode extends LinearOpMode {
 
         LeftServo = hardwareMap.get(Servo.class, "serv1"); //port 0 - the one closer to the linear slider
         RightServo = hardwareMap.get(Servo.class, "serv2"); //port 1
+        ExtendyServo = hardwareMap.get(Servo.class, "serv3");
 
         BHI260AP = hardwareMap.get(IMU.class, "imu");
 
@@ -157,32 +158,32 @@ public class OmniOpMode extends LinearOpMode {
         rightBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         SlideyDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        SlideyMoveDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         leftFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         leftBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         SlideyDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        SlideyMoveDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         double GearRatio3 =  2.89;
         double GearRatio4 = 3.61;
         double GearRatio5 = 5.23;
         double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
 
-        //rumble (just for funsies)
-        RumbleEffect.Builder rumble = new RumbleEffect.Builder();
-        for (double i=0;i<1;i+=.1){
-            rumble = rumble.addStep(i, 1-i, 100);
-            rumble = rumble.addStep(1-i, i, 100);
-        }
-        //gamepad1.runRumbleEffect(rumble.build()); //hopefully this works, idk
+        Effects effects = new Effects();
+        // Effects (just for funsies)
+        // rumble
+        Gamepad.RumbleEffect.Builder rumble = effects.RumbleBothMotorsOpp();
+
+        //gamepad1.runRumbleEffect(rumble.build());
         //gamepad2.runRumbleEffect(rumble.build());
 
         //LED effects (also for funsies)
-        int DurationMs = 10;
         double AddValue = .01;
-        Effects effects = new Effects(AddValue, DurationMs);
-        LedEffect.Builder Led = effects.RGB;
+        int DurationMs = 10;
+        LedEffect.Builder Led = effects.RGBGradient(AddValue, DurationMs);
         Led.setRepeating(true);
         gamepad1.runLedEffect(Led.build());
         // Wait for the game to start (driver presses START)
@@ -194,7 +195,7 @@ public class OmniOpMode extends LinearOpMode {
         // run until the end of the match (driver presses STOP)
         boolean ZPBehaviorToggle = true; //True is float
         boolean ClawToggle = true;
-        boolean ExtendToggle = true;
+        double ExtendAmtPos = 0;
         boolean LowPowerMode = false;
         double YawOffset = 0;
         RightServo.setDirection(Servo.Direction.REVERSE);
@@ -241,6 +242,14 @@ public class OmniOpMode extends LinearOpMode {
                 LeftServo.setPosition(0);
                 RightServo.setPosition(0);
             }
+
+            if (gamepad1.dpad_left) {
+                ExtendAmtPos = .99999;
+            }
+            else if (gamepad1.dpad_right) {
+                ExtendAmtPos = 0;
+            }
+            ExtendyServo.setPosition(ExtendAmtPos);
 
             if (gamepad1.share){
                 LowPowerMode = !LowPowerMode;

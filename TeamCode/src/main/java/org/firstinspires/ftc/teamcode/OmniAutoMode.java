@@ -19,9 +19,9 @@ public class OmniAutoMode extends LinearOpMode {
     private DcMotor leftBackDrive = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
+    private IMU BHI260AP = null;
 
 
-    private static IMU BHI260AP = hardwareMap.get(IMU.class, "imu");
     @Override
     public void runOpMode() {
         waitForStart();
@@ -31,6 +31,7 @@ public class OmniAutoMode extends LinearOpMode {
         rightFrontDrive = hardwareMap.get(DcMotor.class, "rightFront"); //Motor 1 = right front
         rightBackDrive = hardwareMap.get(DcMotor.class, "rightBack"); //Motor 2 = right bottom
         leftBackDrive = hardwareMap.get(DcMotor.class, "leftBack"); //Motor 3 = left bottom
+        BHI260AP = hardwareMap.get(IMU.class, "imu");
 
         leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
@@ -51,6 +52,8 @@ public class OmniAutoMode extends LinearOpMode {
 
         double goBILDAWheel = 3.77953; //96 mm -> in
         double WheelCircum = Math.PI * goBILDAWheel;
+
+        double CountsPerInch = DriveHDHexMotorCPR / WheelCircum;
 
         double LFRevolutions = leftFrontEncoderPos/DriveHDHexMotorCPR;
         double LBRevolutions = leftBackEncoderPos/DriveHDHexMotorCPR;

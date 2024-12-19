@@ -2,14 +2,8 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.Gamepad;
 
-
 public class Effects {
-    public Gamepad.LedEffect.Builder RGB;
-    public Effects(double AddValue, int DurationMs){
-        RGB = RGBGradient(AddValue, DurationMs);
-    }
-
-    private Gamepad.LedEffect.Builder RGBGradient(double AddValue, int DurationMs){
+    public Gamepad.LedEffect.Builder RGBGradient(double AddValue, int DurationMs){
         Gamepad.LedEffect.Builder Led = new Gamepad.LedEffect.Builder();
         // R to G
         for ( double i=0;i<=1;i+=AddValue) { //R to Black
@@ -40,4 +34,14 @@ public class Effects {
         }
         return Led;
     }
+
+    public Gamepad.RumbleEffect.Builder RumbleBothMotorsOpp() {
+        Gamepad.RumbleEffect.Builder rumble = new Gamepad.RumbleEffect.Builder();
+        for (double i = 0; i < 1; i += .1) {
+            rumble = rumble.addStep(i, 1 - i, 100);
+            rumble = rumble.addStep(1 - i, i, 100);
+        }
+        return rumble;
+    }
+
 }
