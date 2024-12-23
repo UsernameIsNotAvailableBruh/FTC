@@ -29,19 +29,14 @@
 
 package org.firstinspires.ftc.teamcode;
 
-
-
-
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.Gamepad;
 
+import com.qualcomm.robotcore.hardware.DcMotor;
+
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
-import com.qualcomm.robotcore.hardware.Gamepad.LedEffect;
-import com.qualcomm.robotcore.hardware.Gamepad.RumbleEffect;
 
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
@@ -81,33 +76,33 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 //NOTES:
 //git fetch --all
 //git reset --hard origin/master
+//git pull
 
-//BHI260AP
+//BHI260AP is the IMU
 
+//The name of the Driver Hub config file is "ILoveDickstein" (dedicated to my dearest friend, Jacob Dickstein (whos a captain of 10847))
 @TeleOp(name="OpDickstein", group="OpMode")
 public class OmniOpMode extends LinearOpMode {
-
     // Declare OpMode members for each of the 4 motors.
     private ElapsedTime runtime     = new ElapsedTime();
     private DcMotor leftFrontDrive  = null;
     private DcMotor leftBackDrive   = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive  = null;
-    private DcMotor SlideyDrive     = null;
+    private DcMotor linearSlidey          = null;
     private IMU BHI260AP            = null;
     private Servo LeftServo         = null;
     private Servo RightServo        = null;
-    private Servo ExtendyServo       = null;
+    private Servo ExtendyServo      = null;
     //private Servo TurnServo         = null;
-    //private DcMotor ActuatorDrive   = null;
-    private DcMotor SlideyMoveDrive = null;
+    private DcMotor ActuatorDrive   = null;
+    private DcMotor slideyTurni     = null;
+
     @Override
     public void runOpMode() {
         //https://gm0.org/en/latest/docs/software/tutorials/gamepad.html#storing-gamepad-state
         Gamepad currentGamepad1  = new Gamepad();
-        Gamepad currentGamepad2  = new Gamepad();
         Gamepad previousGamepad1 = new Gamepad();
-        Gamepad previousGamepad2 = new Gamepad();
 
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
@@ -116,9 +111,9 @@ public class OmniOpMode extends LinearOpMode {
         rightBackDrive  = hardwareMap.get(DcMotor.class, "rightBack"); //Motor 2 = right bottom
         leftBackDrive   = hardwareMap.get(DcMotor.class, "leftBack"); //Motor 3 = left bottom
 
-        SlideyDrive = hardwareMap.get(DcMotor.class, "slidey");
-        SlideyMoveDrive = hardwareMap.get(DcMotor.class, "slidey2");
-        //ActuatorDrive = hardwareMap.get(DcMotor.class, "actorio");
+        linearSlidey = hardwareMap.get(DcMotor.class, "slidey");
+        slideyTurni = hardwareMap.get(DcMotor.class, "slidey2");
+        ActuatorDrive = hardwareMap.get(DcMotor.class, "actorio");
 
         LeftServo = hardwareMap.get(Servo.class, "serv1"); //port 0 - the one closer to the linear slider
         RightServo = hardwareMap.get(Servo.class, "serv2"); //port 1
@@ -149,43 +144,44 @@ public class OmniOpMode extends LinearOpMode {
         leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
-        SlideyDrive.setDirection(DcMotor.Direction.REVERSE);
-        //ActuatorDrive.setDirection(DcMotor.Direction.REVERSE);
-
+        linearSlidey.setDirection(DcMotor.Direction.REVERSE);
+        ActuatorDrive.setDirection(DcMotor.Direction.REVERSE);
 
         leftFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        SlideyDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        SlideyMoveDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        linearSlidey.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        slideyTurni.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         leftFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         leftBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        SlideyDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        SlideyMoveDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        linearSlidey.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        slideyTurni.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         double GearRatio3 =  2.89;
         double GearRatio4 = 3.61;
         double GearRatio5 = 5.23;
         double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
 
-        Effects effects = new Effects();
         // Effects (just for funsies)
+        Effects effects = new Effects();
+
         // rumble
         Gamepad.RumbleEffect.Builder rumble = effects.RumbleBothMotorsOpp();
 
-        //gamepad1.runRumbleEffect(rumble.build());
-        //gamepad2.runRumbleEffect(rumble.build());
+        gamepad2.runRumbleEffect(rumble.build());
+        gamepad1.runRumbleEffect(rumble.build());
 
         //LED effects (also for funsies)
         double AddValue = .01;
         int DurationMs = 10;
-        LedEffect.Builder Led = effects.RGBGradient(AddValue, DurationMs);
+        Gamepad.LedEffect.Builder Led = effects.RGBGradient(AddValue, DurationMs);
         Led.setRepeating(true);
         gamepad1.runLedEffect(Led.build());
+
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
         telemetry.update();
@@ -193,20 +189,20 @@ public class OmniOpMode extends LinearOpMode {
         runtime.reset();
 
         // run until the end of the match (driver presses STOP)
-        boolean ZPBehaviorToggle = true; //True is float
-        boolean ClawToggle = true;
+        Thread gamepad2Thread = new Thread( new Gamepad2Thread() );
+        gamepad2Thread.setDaemon(false);
+        gamepad2Thread.start();
         double ExtendAmtPos = 0;
-        boolean LowPowerMode = false;
+        double LowerPowerBy = 1.5;
         double YawOffset = 0;
         RightServo.setDirection(Servo.Direction.REVERSE);
         LeftServo.setPosition(0);
         RightServo.setPosition(0);
         BHI260AP.resetYaw();
+        setZPBrake(false);
         while (opModeIsActive()) {
             previousGamepad1.copy(currentGamepad1); //gamepad from last iteration
-            previousGamepad2.copy(currentGamepad2);
             currentGamepad1.copy(gamepad1);
-            currentGamepad2.copy(gamepad2);
 
             Orientation robotOrientation = BHI260AP.getRobotOrientation(
                 AxesReference.INTRINSIC,
@@ -219,43 +215,34 @@ public class OmniOpMode extends LinearOpMode {
             int rightBackDriveEncoderPos  = rightBackDrive.getCurrentPosition();
             int leftBackDriveEncoderPos   = leftBackDrive.getCurrentPosition();
 
-            // Rising Edge Detector for (gamepad1.left_stick_button && gamepad1.right_stick_button)
-            if (gamepad1.options && !previousGamepad1.options) {
-                ZPBehaviorToggle = !ZPBehaviorToggle;
+
+            if (gamepad1.options && !previousGamepad1.options && gamepad1.triangle) {
+                setZPBrake(false);
             }
-            if (ZPBehaviorToggle)
-                setZPFloat();
-            else
-                setZPBrake();
+            else if (gamepad1.options) {
+                setZPFloat(false);
+            }
 
             //claw stuff
-            //SlideyDrive.setPower(-gamepad2.left_stick_y);
-            //ActuatorDrive.setPower(-gamepad2.right_stick_y);
-            if (gamepad2.cross && !previousGamepad2.cross) {
-                ClawToggle = !ClawToggle; //if its true make it false, if its false make it true
-            }
-            if (ClawToggle) {
-                LeftServo.setPosition(.5);
-                RightServo.setPosition(.5);
-            }
-            else {
-                LeftServo.setPosition(0);
-                RightServo.setPosition(0);
-            }
+            ActuatorDrive.setPower(-gamepad2.right_stick_y);
 
-            if (gamepad1.dpad_left) {
-                ExtendAmtPos = .99999;
+            if (gamepad1.dpad_left && gamepad1.dpad_right) {
+                ExtendAmtPos = .5;
+            }
+            else if (gamepad1.dpad_left) {
+                ExtendAmtPos = .999;
             }
             else if (gamepad1.dpad_right) {
                 ExtendAmtPos = 0;
             }
             ExtendyServo.setPosition(ExtendAmtPos);
 
-            if (gamepad1.share){
-                LowPowerMode = !LowPowerMode;
+            if (gamepad1.share && gamepad1.triangle){
+                LowerPowerBy = 1;
             }
-
-            SlideyMoveDrive.setPower((gamepad2.left_trigger-gamepad2.right_trigger));
+            else if (gamepad1.share){
+                LowerPowerBy = 1.5;
+            }
 
             // Rising Edge Detector to dance
             // while ((gamepad1.left_stick_button && gamepad1.right_stick_button) && !(previousGamepad1.left_stick_button && previousGamepad1.right_stick_button)) {
@@ -291,8 +278,7 @@ public class OmniOpMode extends LinearOpMode {
             double Slidey = -gamepad2.right_stick_y;
 //            double Acturio = -gamepad2.left_stick_y;
 
-            SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-            SlideyDrive.setPower(Slidey);
+            linearSlidey.setPower(Slidey);
 
 //            ActuatorDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 //            ActuatorDrive.setPower(Acturio);
@@ -320,9 +306,9 @@ public class OmniOpMode extends LinearOpMode {
             double Pitch = robotOrientation.secondAngle; // Y - Pitch
             double Yaw   = robotOrientation.thirdAngle; // Z - Yaw
 
-            if (gamepad1.cross && !previousGamepad1.cross)
+            if (gamepad1.cross)
                 YawOffset = resetYaw();
-            if (gamepad1.square && !previousGamepad1.square)
+            if (gamepad1.square)
                 BHI260AP.resetYaw();
 
             double Direction1 = Math.sin(theta + Math.PI/4 - YawOffset); // https://www.desmos.com/calculator/rqqamhfeek
@@ -383,38 +369,30 @@ public class OmniOpMode extends LinearOpMode {
             rightFrontPower -= gamepad1.right_trigger;
             leftBackPower += gamepad1.right_trigger;
             rightBackPower -= gamepad1.right_trigger;
-            YawOffset = resetYaw();
 
             if (gamepad1.right_bumper) {
                 leftFrontPower  = 1;
                 rightFrontPower = -1;
                 leftBackPower   = 1;
                 rightBackPower  = -1;
-                YawOffset = resetYaw();
             } else if (gamepad1.left_bumper) {
                 leftFrontPower  = -1;
                 rightFrontPower = 1;
                 leftBackPower   = -1;
                 rightBackPower  = 1;
-                YawOffset = resetYaw();
             }
+            YawOffset = resetYaw();
 
             if (gamepad1.left_stick_button) //make the other controller rumble
                 gamepad2.rumble(100);
-            if (gamepad2.left_stick_button)
-                gamepad1.rumble(100);
 
             if (gamepad1.right_stick_button) //stop rumbles
                 gamepad1.stopRumble();
-            if (gamepad2.right_stick_button)
-                gamepad2.stopRumble();
 
-            if (LowPowerMode) {
-                leftFrontPower /= 1.5;
-                rightFrontPower /= 1.5;
-                leftBackPower /= 1.5;
-                rightBackPower /= 1.5;
-            }
+            leftFrontPower /= LowerPowerBy;
+            rightFrontPower /= LowerPowerBy;
+            leftBackPower /= LowerPowerBy;
+            rightBackPower /= LowerPowerBy;
 
             // Normalize the values so no wheel  power exceeds 100%
             // This ensures that the robot maintains the desired motion.
@@ -447,7 +425,6 @@ public class OmniOpMode extends LinearOpMode {
             rightBackPower  = gamepad1.b ? 1.0 : 0.0;  // B gamepad
             */
 
-
             // Send calculated power to wheels
             leftFrontDrive.setPower(leftFrontPower);
             rightFrontDrive.setPower(rightFrontPower);
@@ -467,11 +444,13 @@ public class OmniOpMode extends LinearOpMode {
             telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
             telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
             telemetry.addData("Left, Right, Turn", "%4.2f, %4.2f", LeftServo.getPosition(), RightServo.getPosition());
+            telemetry.addData("Front left/Right", "%d, %d", leftFrontDriveEncoderPos, rightFrontDriveEncoderPos);
+            telemetry.addData("Back left/Right","%d, %d", rightBackDriveEncoderPos, leftBackDriveEncoderPos);
             telemetry.update();
         }
     }
     private void happyDanceRobot() {
-        setZPFloat();
+        setZPFloat(false);
         leftFrontDrive.setPower(1);
         rightFrontDrive.setPower(-1);
         leftBackDrive.setPower(1);
@@ -488,21 +467,27 @@ public class OmniOpMode extends LinearOpMode {
         rightBackDrive.setPower(1);
         sleep(1500);
     }
-    private void setZPFloat() {
-        leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-
-        SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+    private void setZPFloat(boolean isGamepad2) {
+        if (isGamepad2) {
+            linearSlidey.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        }
+        else {
+            leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+            rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+            leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+            rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        }
     }
-    private void setZPBrake() {
-        leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        SlideyDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    private void setZPBrake(boolean isGamepad2) {
+        if (isGamepad2) {
+            linearSlidey.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        }
+        else {
+            leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        }
     }
     private double resetYaw() {
         double Yaw = BHI260AP.getRobotOrientation(
@@ -511,5 +496,79 @@ public class OmniOpMode extends LinearOpMode {
                 AngleUnit.RADIANS
             ).thirdAngle;
         return Yaw;
+    }
+
+    public class Gamepad2Thread implements Runnable {
+        public void run() {
+            Gamepad currentGamepad2  = new Gamepad();
+            Gamepad previousGamepad2 = new Gamepad();
+            boolean ClawToggle = true;
+            boolean LowPowerMode = false;
+
+            while (opModeIsActive()) {
+                previousGamepad2.copy(currentGamepad2);
+                currentGamepad2.copy(gamepad2);
+
+                if (gamepad2.left_stick_button)
+                    gamepad1.rumble(100);
+                if (gamepad2.right_stick_button)
+                    gamepad2.stopRumble();
+
+                if (gamepad2.options && gamepad2.triangle) {
+                    setZPBrake(true);
+                }
+                else if (gamepad2.options) {
+                    setZPFloat(true);
+                }
+
+                if (gamepad2.share  && !gamepad2.triangle){
+                    LowPowerMode = true;
+                }
+                else if (gamepad2.share && gamepad2.triangle){
+                    LowPowerMode = false;
+                }
+
+                if (gamepad2.cross) {
+                    ClawToggle = true;
+                }
+                else if (gamepad2.cross && gamepad2.triangle){
+                    ClawToggle = false;
+                }
+                if (ClawToggle) {
+                    LeftServo.setPosition(.5);
+                    RightServo.setPosition(.5);
+                }
+                else {
+                    LeftServo.setPosition(0);
+                    RightServo.setPosition(0);
+                }
+
+                slideyTurni.setPower((gamepad2.left_trigger-gamepad2.right_trigger));
+
+            }
+        }
+    }
+
+    // This button status thing is inspired by u/m0stlyharmless_user and u/fusionforscience on reddit from a post 8y ago :)
+    // https://www.reddit.com/r/FTC/comments/5lpaai/comment/dbye175/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+    // https://www.reddit.com/r/FTC/comments/5lpaai/comment/dcerspj/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+    enum Status {
+        notPressedYet,
+        currentlyPressed,
+        wasPressed
+    }
+    private class Button {
+        private Status status = Status.notPressedYet;
+        private boolean button;
+
+        public Status ButtonStatus(boolean button) {
+            if (button && status == Status.notPressedYet)
+                status = Status.currentlyPressed;
+            else if (!button && status == Status.currentlyPressed)
+                status = Status.wasPressed;
+            else if (status == Status.wasPressed)
+                status = Status.notPressedYet;
+            return status;
+        }
     }
 }
