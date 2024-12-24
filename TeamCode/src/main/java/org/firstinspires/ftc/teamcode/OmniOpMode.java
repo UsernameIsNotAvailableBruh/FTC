@@ -219,18 +219,17 @@ public class OmniOpMode extends LinearOpMode {
             int rightBackDriveEncoderPos  = rightBackDrive.getCurrentPosition();
             int leftBackDriveEncoderPos   = leftBackDrive.getCurrentPosition();
 
-
-            if (gamepad1.options && !previousGamepad1.options && gamepad1.triangle) {
+            if (ButtonMonitor.isPressed("options") && ButtonMonitor.Pressed("triangle")) {
                 setZPBrake(false);
             }
-            else if (gamepad1.options) {
+            else if (ButtonMonitor.isPressed("options")) {
                 setZPFloat(false);
             }
 
-            if (ButtonMonitor.buttonMap.get("share") == Status.wasPressed  && gamepad1.triangle){
+            if (ButtonMonitor.isPressed("share") && ButtonMonitor.Pressed("triangle")){
                 LowerPowerBy = 1;
             }
-            else if (gamepad1.share){
+            else if (ButtonMonitor.isPressed("share")){
                 LowerPowerBy = 1.5;
             }
 
@@ -288,9 +287,9 @@ public class OmniOpMode extends LinearOpMode {
             double Pitch = robotOrientation.secondAngle; // Y - Pitch
             double Yaw   = robotOrientation.thirdAngle; // Z - Yaw
 
-            if (gamepad1.cross)
+            if (ButtonMonitor.Pressed("cross") || gamepad1.cross)
                 YawOffset = resetYaw();
-            if (gamepad1.square)
+            if (ButtonMonitor.Pressed("square") || gamepad1.square)
                 BHI260AP.resetYaw();
 
             double Direction1 = Math.sin(theta + Math.PI/4 - YawOffset); // https://www.desmos.com/calculator/rqqamhfeek
@@ -305,7 +304,7 @@ public class OmniOpMode extends LinearOpMode {
             //if (gamepad1.dpad_up) {
             //    //sin(Math.PI/2) is 1
             //    double RAD = Math.PI/2;
-            //    double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOffset);
+            //    double Dpadirection1 = Math.sin(RAD + Math.PI/4 - YawOfb fset);
             //    double Dpadirection2 = Math.sin(RAD - Math.PI/4 - YawOffset);
             //    // Dpadirection1 is Dpadirection2
             //    leftFrontPower  = Dpadirection1 * hypotenuse; // 1
@@ -352,12 +351,12 @@ public class OmniOpMode extends LinearOpMode {
             leftBackPower += gamepad1.right_trigger;
             rightBackPower -= gamepad1.right_trigger;
 
-            if (gamepad1.right_bumper) {
+            if (ButtonMonitor.Pressed("right_bumper")) {
                 leftFrontPower  = 1;
                 rightFrontPower = -1;
                 leftBackPower   = 1;
                 rightBackPower  = -1;
-            } else if (gamepad1.left_bumper) {
+            } else if (ButtonMonitor.Pressed("left_bumper")) {
                 leftFrontPower  = -1;
                 rightFrontPower = 1;
                 leftBackPower   = -1;
@@ -365,9 +364,9 @@ public class OmniOpMode extends LinearOpMode {
             }
             YawOffset = resetYaw();
 
-            if (ButtonMonitor.buttonMap.get("left_stick_button") == Status.wasPressed) //make the other controller rumble
+            if (ButtonMonitor.Pressed("left_stick_button")) //make the other controller rumble
                 gamepad2.rumble(100);
-            if (ButtonMonitor.buttonMap.get("right_stick_button") == Status.wasPressed) //stop rumbles
+            if (ButtonMonitor.Pressed("right_stick_button")) //stop rumbles
                 gamepad1.stopRumble();
 
             leftFrontPower /= LowerPowerBy;
@@ -555,8 +554,8 @@ public class OmniOpMode extends LinearOpMode {
         wasPressed
     }
     private class Buttons {
-        public HashMap<String, Status> buttonMap = new HashMap<String, Status>();
-        private HashMap<String, Button> ButtonStorage = new HashMap<String, Button>();
+        public HashMap<String, Status> buttonMap = new HashMap<>();
+        private HashMap<String, Button> ButtonStorage = new HashMap<>();
         Gamepad gpad = new Gamepad();
         private String[] buttonName;
         private boolean[] buttonList;
@@ -568,8 +567,8 @@ public class OmniOpMode extends LinearOpMode {
             else {
                 gpad.copy(gamepad2);
             }
-            buttonName = new String[]  {"options", "triangle", "share", "cross", "square", "circle", "left_stick_button", "right_stick_button", "dpad_left", "dpad_right", "dpad_up", "dpad_down"};
-            buttonList = new boolean[] {gpad.options, gpad.triangle, gpad.share, gpad.cross, gpad.square, gpad.circle, gpad.left_stick_button, gpad.right_stick_button, gpad.dpad_left, gpad.dpad_right, gpad.dpad_up, gpad.dpad_down};
+            buttonName = new String[]  {"options", "triangle", "share", "cross", "square", "circle", "left_stick_button", "right_stick_button", "dpad_left", "dpad_right", "dpad_up", "dpad_down", "right_bumper", "left_bumper"};
+            buttonList = new boolean[] {gpad.options, gpad.triangle, gpad.share, gpad.cross, gpad.square, gpad.circle, gpad.left_stick_button, gpad.right_stick_button, gpad.dpad_left, gpad.dpad_right, gpad.dpad_up, gpad.dpad_down, gpad.right_bumper, gpad.left_bumper};
             for (String s : buttonName) {
                 ButtonStorage.put(s, new Button());
             }
