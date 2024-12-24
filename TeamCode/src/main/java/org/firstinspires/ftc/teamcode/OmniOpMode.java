@@ -45,6 +45,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 /*
  * This file contains an example of a Linear "OpMode".
  * An OpMode is a 'program' that runs in either the autonomous or the teleop period of an FTC match.
@@ -101,8 +104,8 @@ public class OmniOpMode extends LinearOpMode {
     @Override
     public void runOpMode() {
         //https://gm0.org/en/latest/docs/software/tutorials/gamepad.html#storing-gamepad-state
-        Gamepad currentGamepad1  = new Gamepad();
-        Gamepad previousGamepad1 = new Gamepad();
+//        Gamepad currentGamepad1  = new Gamepad();
+//        Gamepad previousGamepad1 = new Gamepad();
 
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
@@ -192,17 +195,18 @@ public class OmniOpMode extends LinearOpMode {
         Thread gamepad2Thread = new Thread( new Gamepad2Thread() );
         gamepad2Thread.setDaemon(false);
         gamepad2Thread.start();
-        double ExtendAmtPos = 0;
         double LowerPowerBy = 1.5;
         double YawOffset = 0;
+        Buttons ButtonMonitor = new Buttons(false);
         RightServo.setDirection(Servo.Direction.REVERSE);
         LeftServo.setPosition(0);
         RightServo.setPosition(0);
         BHI260AP.resetYaw();
         setZPBrake(false);
         while (opModeIsActive()) {
-            previousGamepad1.copy(currentGamepad1); //gamepad from last iteration
-            currentGamepad1.copy(gamepad1);
+//            previousGamepad1.copy(currentGamepad1); //gamepad from last iteration
+//            currentGamepad1.copy(gamepad1);
+            ButtonMonitor.update();
 
             Orientation robotOrientation = BHI260AP.getRobotOrientation(
                 AxesReference.INTRINSIC,
@@ -223,21 +227,7 @@ public class OmniOpMode extends LinearOpMode {
                 setZPFloat(false);
             }
 
-            //claw stuff
-            ActuatorDrive.setPower(-gamepad2.right_stick_y);
-
-            if (gamepad1.dpad_left && gamepad1.dpad_right) {
-                ExtendAmtPos = .5;
-            }
-            else if (gamepad1.dpad_left) {
-                ExtendAmtPos = .999;
-            }
-            else if (gamepad1.dpad_right) {
-                ExtendAmtPos = 0;
-            }
-            ExtendyServo.setPosition(ExtendAmtPos);
-
-            if (gamepad1.share && gamepad1.triangle){
+            if (ButtonMonitor.buttonMap.get("share") == Status.wasPressed  && gamepad1.triangle){
                 LowerPowerBy = 1;
             }
             else if (gamepad1.share){
@@ -274,14 +264,6 @@ public class OmniOpMode extends LinearOpMode {
             double lefty = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
             double leftx = gamepad1.left_stick_x;
             double hypotenuse = Math.sqrt(  Math.pow(leftx, 2)+Math.pow(lefty, 2)  ); //pythagorean theorem
-
-            double Slidey = -gamepad2.right_stick_y;
-//            double Acturio = -gamepad2.left_stick_y;
-
-            linearSlidey.setPower(Slidey);
-
-//            ActuatorDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//            ActuatorDrive.setPower(Acturio);
 
             /*
             slope is basically the direction the robot is gonna go
@@ -383,10 +365,9 @@ public class OmniOpMode extends LinearOpMode {
             }
             YawOffset = resetYaw();
 
-            if (gamepad1.left_stick_button) //make the other controller rumble
+            if (ButtonMonitor.buttonMap.get("left_stick_button") == Status.wasPressed) //make the other controller rumble
                 gamepad2.rumble(100);
-
-            if (gamepad1.right_stick_button) //stop rumbles
+            if (ButtonMonitor.buttonMap.get("right_stick_button") == Status.wasPressed) //stop rumbles
                 gamepad1.stopRumble();
 
             leftFrontPower /= LowerPowerBy;
@@ -500,39 +481,39 @@ public class OmniOpMode extends LinearOpMode {
 
     public class Gamepad2Thread implements Runnable {
         public void run() {
-            Gamepad currentGamepad2  = new Gamepad();
-            Gamepad previousGamepad2 = new Gamepad();
+//            Gamepad currentGamepad2  = new Gamepad();
+//            Gamepad previousGamepad2 = new Gamepad();
             boolean ClawToggle = true;
-            boolean LowPowerMode = false;
+            Buttons ButtonMonitor = new Buttons(true);
+            double LowerPowerBy = 1;
+            double ExtendAmtPos = 0;
 
             while (opModeIsActive()) {
-                previousGamepad2.copy(currentGamepad2);
-                currentGamepad2.copy(gamepad2);
+//                previousGamepad2.copy(currentGamepad2);
+//                currentGamepad2.copy(gamepad2);
+                ButtonMonitor.update();
 
-                if (gamepad2.left_stick_button)
+                if (ButtonMonitor.Pressed("left_stick_button"))
                     gamepad1.rumble(100);
-                if (gamepad2.right_stick_button)
+                if (ButtonMonitor.Pressed("right_stick_button"))
                     gamepad2.stopRumble();
 
-                if (gamepad2.options && gamepad2.triangle) {
+                if (ButtonMonitor.isPressed("options") && ButtonMonitor.Pressed("triangle")) {
                     setZPBrake(true);
                 }
-                else if (gamepad2.options) {
+                else if (ButtonMonitor.isPressed("options")) {
                     setZPFloat(true);
                 }
 
-                if (gamepad2.share  && !gamepad2.triangle){
-                    LowPowerMode = true;
+                if (ButtonMonitor.isPressed("share")  && ButtonMonitor.Pressed("triangle")){
+                    LowerPowerBy = 1.5;
                 }
-                else if (gamepad2.share && gamepad2.triangle){
-                    LowPowerMode = false;
+                else if (ButtonMonitor.isPressed("share")){
+                    LowerPowerBy = 1;
                 }
 
-                if (gamepad2.cross) {
-                    ClawToggle = true;
-                }
-                else if (gamepad2.cross && gamepad2.triangle){
-                    ClawToggle = false;
+                if (ButtonMonitor.wasPressed("cross")) {
+                    ClawToggle = !ClawToggle;
                 }
                 if (ClawToggle) {
                     LeftServo.setPosition(.5);
@@ -543,8 +524,24 @@ public class OmniOpMode extends LinearOpMode {
                     RightServo.setPosition(0);
                 }
 
-                slideyTurni.setPower((gamepad2.left_trigger-gamepad2.right_trigger));
+                double Slidey = -gamepad2.right_stick_y/LowerPowerBy;
+                double Acturio = -gamepad2.left_stick_y/LowerPowerBy;
 
+                linearSlidey.setPower(Slidey);
+                ActuatorDrive.setPower(Acturio);
+
+                if (ButtonMonitor.isPressed("dpad_left") && ButtonMonitor.isPressed("dpad_right")) {
+                    ExtendAmtPos = .5;
+                }
+                else if (ButtonMonitor.Pressed("dpad_left")) {
+                    ExtendAmtPos = .999;
+                }
+                else if (ButtonMonitor.Pressed("dpad_right")) {
+                    ExtendAmtPos = 0;
+                }
+                ExtendyServo.setPosition(ExtendAmtPos);
+
+                slideyTurni.setPower((gamepad2.left_trigger-gamepad2.right_trigger)/LowerPowerBy);
             }
         }
     }
@@ -557,18 +554,61 @@ public class OmniOpMode extends LinearOpMode {
         currentlyPressed,
         wasPressed
     }
-    private class Button {
-        private Status status = Status.notPressedYet;
-        private boolean button;
+    private class Buttons {
+        public HashMap<String, Status> buttonMap = new HashMap<String, Status>();
+        private HashMap<String, Button> ButtonStorage = new HashMap<String, Button>();
+        Gamepad gpad = new Gamepad();
+        private String[] buttonName;
+        private boolean[] buttonList;
 
-        public Status ButtonStatus(boolean button) {
-            if (button && status == Status.notPressedYet)
-                status = Status.currentlyPressed;
-            else if (!button && status == Status.currentlyPressed)
-                status = Status.wasPressed;
-            else if (status == Status.wasPressed)
-                status = Status.notPressedYet;
-            return status;
+        public Buttons(boolean isGamepad2) {
+            if (!isGamepad2) {
+                gpad.copy(gamepad1);
+            }
+            else {
+                gpad.copy(gamepad2);
+            }
+            buttonName = new String[]  {"options", "triangle", "share", "cross", "square", "circle", "left_stick_button", "right_stick_button", "dpad_left", "dpad_right", "dpad_up", "dpad_down"};
+            buttonList = new boolean[] {gpad.options, gpad.triangle, gpad.share, gpad.cross, gpad.square, gpad.circle, gpad.left_stick_button, gpad.right_stick_button, gpad.dpad_left, gpad.dpad_right, gpad.dpad_up, gpad.dpad_down};
+            for (String s : buttonName) {
+                ButtonStorage.put(s, new Button());
+            }
+        }
+
+        public boolean Pressed(String button) {
+            return buttonMap.get(button) == Status.wasPressed || buttonMap.get(button) == Status.currentlyPressed;
+        }
+
+        public boolean wasPressed(String button) {
+            return buttonMap.get(button) == Status.wasPressed;
+        }
+
+        public boolean isPressed(String button) {
+            return buttonMap.get(button) == Status.currentlyPressed;
+        }
+
+        public boolean notPressed(String button) {
+            return buttonMap.get(button) == Status.notPressedYet;
+        }
+
+        public void update(){
+            for (int i=0; i<buttonName.length; i++) {
+                buttonMap.put(buttonName[i], ButtonStorage.get(buttonName[i]).ButtonStatus(buttonList[i]));
+            }
+        }
+
+        private class Button { //class in a class in a class for funsies
+            private Status status = Status.notPressedYet;
+
+            public Status ButtonStatus(boolean button) {
+                if (button && status == Status.notPressedYet)
+                    status = Status.currentlyPressed;
+                else if (!button && status == Status.currentlyPressed)
+                    status = Status.wasPressed;
+                else if (status == Status.wasPressed)
+                    status = Status.notPressedYet;
+                return status;
+            }
         }
     }
 }

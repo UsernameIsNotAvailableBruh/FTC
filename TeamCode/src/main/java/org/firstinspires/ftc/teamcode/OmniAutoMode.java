@@ -146,7 +146,7 @@ public class OmniAutoMode extends LinearOpMode {
         setPowerALL(Power);
     }
 
-    public void Angle(int theta, double Power) {
+    public void Angle(int theta) {
         double YawOffset = BHI260AP.getRobotOrientation(
                 AxesReference.INTRINSIC,
                 AxesOrder.XYZ,
