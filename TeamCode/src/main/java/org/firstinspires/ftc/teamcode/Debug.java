@@ -30,8 +30,11 @@
 package org.firstinspires.ftc.teamcode;
 
 
+import static org.firstinspires.ftc.robotcore.internal.system.AppUtil.ROBOT_DATA_DIR;
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
 import com.qualcomm.robotcore.hardware.Servo;
@@ -39,7 +42,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import com.qualcomm.robotcore.hardware.Gamepad.LedEffect;
 import com.qualcomm.robotcore.hardware.Gamepad.RumbleEffect;
-
+import com.qualcomm.robotcore.util.ReadWriteFile;
 
 /*
  * This file contains an example of a Linear "OpMode".
@@ -75,14 +78,14 @@ import com.qualcomm.robotcore.hardware.Gamepad.RumbleEffect;
 
 //BHI260AP
 
-@TeleOp(name="OpDickstein", group="OpMode")
-public class DebugClaw extends LinearOpMode {
-
+@TeleOp(name="Debuggy", group="OpMode")
+public class Debug extends LinearOpMode {
     // Declare OpMode members for each of the 4 motors.
     private ElapsedTime runtime = new ElapsedTime();
     private Servo LeftServo = null;
     private Servo RightServo = null;
     private Servo TurnServo = null;
+    private DcMotor leftFrontDrive = null;
 
     @Override
     public void runOpMode() {
@@ -94,8 +97,9 @@ public class DebugClaw extends LinearOpMode {
 
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
-        LeftServo = hardwareMap.get(Servo.class, "serv1");
-        RightServo = hardwareMap.get(Servo.class, "serv2");
+        //  LeftServo = hardwareMap.get(Servo.class, "serv1");
+        //  RightServo = hardwareMap.get(Servo.class, "serv2");
+        leftFrontDrive  = hardwareMap.get(DcMotor.class, "leftFront");
         //TurnServo = hardwareMap.get(Servo.class, "turn");
 
         //rumble (just for funsies)
@@ -104,8 +108,8 @@ public class DebugClaw extends LinearOpMode {
             rumble = rumble.addStep(i, 1 - i, 100);
             rumble = rumble.addStep(1 - i, i, 100);
         }
-        //gamepad1.runRumbleEffect(rumble.build()); //hopefully this works, idk
-        //gamepad2.runRumbleEffect(rumble.build());
+        gamepad1.runRumbleEffect(rumble.build());
+        gamepad2.runRumbleEffect(rumble.build());
 
         //LED effects (also for funsies)
         LedEffect.Builder Led = new LedEffect.Builder();
@@ -141,38 +145,50 @@ public class DebugClaw extends LinearOpMode {
         Led.setRepeating(true);
         gamepad1.runLedEffect(Led.build());
         gamepad2.runLedEffect(Led.build());
-        LeftServo.setDirection(Servo.Direction.REVERSE);
+        // LeftServo.setDirection(Servo.Direction.REVERSE);
         // Wait for the game to start (driver presses START)
-        LeftServo.setPosition(0);
-        RightServo.setPosition(0);
+        // LeftServo.setPosition(0);
+        // RightServo.setPosition(0);
         telemetry.addData("Status", "Initialized");
         telemetry.update();
         waitForStart();
         runtime.reset();
-        boolean ClawToggle = false;
-        while (opModeIsActive()) {
+        // boolean ClawToggle = false;
 
-            previousGamepad1.copy(currentGamepad1); //gamepad from last iteration
-            previousGamepad2.copy(currentGamepad2);
-            currentGamepad1.copy(gamepad1);
-            currentGamepad2.copy(gamepad2);
-            
-            if (gamepad1.cross && previousGamepad1.cross && !ClawToggle) {
-                LeftServo.setPosition(0);
-                RightServo.setPosition(0);
-                ClawToggle = true;
-            }
-            else if (gamepad1.cross && previousGamepad1.cross && ClawToggle) {
-                LeftServo.setPosition(.5);
-                RightServo.setPosition(.5);
-                ClawToggle = false;
-            }
+        leftFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        leftFrontDrive.setPower(1);
+        sleep(1000);
+        leftFrontDrive.setPower(0);
+        int a = leftFrontDrive.getCurrentPosition();
 
-            // Show the elapsed game time and wheel power.
-            telemetry.addData("Status", "Run Time: " + runtime.toString());
-            telemetry.addData("Left", "%4.2f", LeftServo.getPosition());
-            telemetry.addData("Right", "%4.2f", RightServo.getPosition());
-            telemetry.update();
-        }
+        leftFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        leftFrontDrive.setPower(.5);
+        sleep(1000);
+        leftFrontDrive.setPower(0);
+        int b = leftFrontDrive.getCurrentPosition();
+        ReadWriteFile.writeFile(ROBOT_DATA_DIR, "PosPowerData.txt", String.valueOf(a)+ " "+String.valueOf(b));
+
+
+        leftFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        leftFrontDrive.setPower(-1);
+        sleep(1000);
+        leftFrontDrive.setPower(0);
+        a = leftFrontDrive.getCurrentPosition();
+
+        leftFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        leftFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        leftFrontDrive.setPower(-.5);
+        sleep(1000);
+        leftFrontDrive.setPower(0);
+        b = leftFrontDrive.getCurrentPosition();
+        ReadWriteFile.writeFile(ROBOT_DATA_DIR, "PosPowerReverseData.txt", String.valueOf(a)+ " "+String.valueOf(b));
+
+        // Show the elapsed game time and wheel power.
+        telemetry.addData("Status", "Run Time: " + runtime.toString());
+        telemetry.addData("Pos", "%4.2f", leftFrontDrive.getCurrentPosition());
+        telemetry.update();
     }
 }

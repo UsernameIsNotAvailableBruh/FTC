@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 //import com.qualcomm.robotcore.eventloop.opmode.OpMode; lower level version of LinearOpMode
@@ -21,6 +22,12 @@ public class OmniAutoMode extends LinearOpMode {
     private DcMotor rightBackDrive = null;
     private IMU BHI260AP = null;
 
+    final double GearRatio3 =  2.89;
+    final double GearRatio4 = 3.61;
+    final double GearRatio5 = 5.23;
+    final double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
+    final double goBILDAWheel = 3.77953; //96 mm -> in
+    final double WheelCircum = Math.PI * goBILDAWheel;
 
     @Override
     public void runOpMode() {
@@ -38,22 +45,20 @@ public class OmniAutoMode extends LinearOpMode {
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
 
+        IMU.Parameters IMUParams = new IMU.Parameters(
+                new RevHubOrientationOnRobot(
+                        RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                        RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
+                )
+        );
+        BHI260AP.initialize(IMUParams);
+        BHI260AP.resetYaw();
         ResetEncoders();
 
         int leftFrontEncoderPos = leftFrontDrive.getCurrentPosition();
         int rightFrontEncoderPos = rightFrontDrive.getCurrentPosition();
         int rightBackEncoderPos = rightBackDrive.getCurrentPosition();
         int leftBackEncoderPos = leftBackDrive.getCurrentPosition();
-
-        double GearRatio3 =  2.89;
-        double GearRatio4 = 3.61;
-        double GearRatio5 = 5.23;
-        double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
-
-        double goBILDAWheel = 3.77953; //96 mm -> in
-        double WheelCircum = Math.PI * goBILDAWheel;
-
-        double CountsPerInch = DriveHDHexMotorCPR / WheelCircum;
 
         double LFRevolutions = leftFrontEncoderPos/DriveHDHexMotorCPR;
         double LBRevolutions = leftBackEncoderPos/DriveHDHexMotorCPR;
@@ -70,8 +75,7 @@ public class OmniAutoMode extends LinearOpMode {
         double RFDistance = WheelCircum*RFRevolutions;
         double RBDistance = WheelCircum*RBRevolutions;
 
-        GotoPositionForward(1000); // Tells the motor that the position it should go to is desiredPosition
-
+        GotoAtAngle(45,2, InchtoPos(6));
 
         telemetry.addData("Status", "Run Time: " + runtime.toString());
         telemetry.addLine("Encoder");
@@ -120,7 +124,7 @@ public class OmniAutoMode extends LinearOpMode {
         leftBackDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
         leftBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        setPowerALL(0.5);
+        setPowerALL(1);
     }
 
     public void setPowerALL(double Power) {
@@ -130,23 +134,12 @@ public class OmniAutoMode extends LinearOpMode {
         leftBackDrive.setPower(Power);
     }
 
-    public void GotoPositionForwardInches(int Pos, double Power) {
-        leftFrontDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
-        leftFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        rightFrontDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
-        rightFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        rightBackDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
-        rightBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        leftBackDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
-        leftBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        setPowerALL(Power);
+    public int InchtoPos(double Inches) {
+        double CountsPerInch = DriveHDHexMotorCPR / WheelCircum;
+        return (int) (Inches*CountsPerInch);
     }
 
-    public void Angle(int theta) {
+    public void GotoAtAngle(double theta, double Power, int Pos) {
         double YawOffset = BHI260AP.getRobotOrientation(
                 AxesReference.INTRINSIC,
                 AxesOrder.XYZ,
@@ -156,24 +149,35 @@ public class OmniAutoMode extends LinearOpMode {
         double Direction1 = Math.sin(theta + Math.PI/4 - YawOffset); // https://www.desmos.com/calculator/rqqamhfeek
         double Direction2 = Math.sin(theta - Math.PI/4 - YawOffset); // https://www.desmos.com/calculator/dminewe5vs
 
-        double leftFrontPower  = Direction1;
-        double rightBackPower  = Direction1;
-        double leftBackPower   = Direction2;
-        double rightFrontPower = Direction2;
+        double leftFrontPower  = Direction1 * Power;
+        double rightBackPower  = Direction1 * Power;
+        double leftBackPower   = Direction2 * Power;
+        double rightFrontPower = Direction2 * Power;
 
-        leftFrontDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
+        double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
+        max = Math.max(max, Math.abs(leftBackPower));
+        max = Math.max(max, Math.abs(rightBackPower));
+
+        if (max > 1.0) {
+            leftFrontPower  /= max;
+            rightFrontPower /= max;
+            leftBackPower   /= max;
+            rightBackPower  /= max;
+        }
+
+        leftFrontDrive.setTargetPosition(leftFrontDrive.getCurrentPosition()+Pos); // Tells the motor that the position it should go to is desiredPosition
         leftFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftFrontDrive.setPower(leftFrontPower);
 
-        rightFrontDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
+        rightFrontDrive.setTargetPosition(rightFrontDrive.getCurrentPosition()+Pos); // Tells the motor that the position it should go to is desiredPosition
         rightFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         rightFrontDrive.setPower(rightFrontPower);
 
-        rightBackDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
+        rightBackDrive.setTargetPosition(rightBackDrive.getCurrentPosition()+Pos); // Tells the motor that the position it should go to is desiredPosition
         rightBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         rightBackDrive.setPower(rightBackPower);
 
-        leftBackDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
+        leftBackDrive.setTargetPosition(leftBackDrive.getCurrentPosition()+Pos); // Tells the motor that the position it should go to is desiredPosition
         leftBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftBackDrive.setPower(leftBackPower);
     }
