@@ -26,7 +26,6 @@ public class OmniAutoMode extends LinearOpMode {
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
     private IMU BHI260AP = null;
-    private AutoReadData autoReadData;
 
     final double GearRatio3 =  2.89;
     final double GearRatio4 = 3.61;
@@ -81,6 +80,9 @@ public class OmniAutoMode extends LinearOpMode {
         double RFDistance = WheelCircum*RFRevolutions;
         double RBDistance = WheelCircum*RBRevolutions;
 
+
+        GotoPositionForward(InchtoPos(10));
+
         telemetry.addData("Status", "Run Time: " + runtime.toString());
         telemetry.addLine("Encoder");
         telemetry.addData("LF/RF Encoder", "%d, %d", leftFrontEncoderPos, rightFrontEncoderPos);
@@ -120,26 +122,7 @@ public class OmniAutoMode extends LinearOpMode {
         RF,
         LB,
         RB,
-    }
-    public int PwrToPos(Wheel wheel, double pwr){
-        double Pos = 0;
-        switch (wheel) {
-            case LF:
-                 Pos = AutoReadData.LFm*pwr + AutoReadData.LFb;
-                 break;
-            case LB:
-                Pos = AutoReadData.LBm*pwr + AutoReadData.LBb;
-                break;
-            case RF:
-                Pos = AutoReadData.RFm*pwr + AutoReadData.RFb;
-                break;
-            case RB:
-                Pos = AutoReadData.RBm*pwr + AutoReadData.RBb;
-                break;
         }
-        return (int) Pos;
-    }
-
     public void GotoPositionForward(int Pos) {
         leftFrontDrive.setTargetPosition(Pos); // Tells the motor that the position it should go to is desiredPosition
         leftFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -164,7 +147,7 @@ public class OmniAutoMode extends LinearOpMode {
     }
 
     public int InchtoPos(double Inches) {
-        double CountsPerInch = DriveHDHexMotorCPR / WheelCircum;
+        double CountsPerInch = 2*DriveHDHexMotorCPR / WheelCircum;
         return (int) (Inches*CountsPerInch);
     }
 
@@ -194,19 +177,19 @@ public class OmniAutoMode extends LinearOpMode {
             rightBackPower  /= max;
         }
 
-        leftFrontDrive.setTargetPosition((leftFrontDrive.getCurrentPosition()+Pos)*1915 ); // Tells the motor that the position it should go to is desiredPosition
+        leftFrontDrive.setTargetPosition((leftFrontDrive.getCurrentPosition()+Pos)*1915); // Tells the motor that the position it should go to is desiredPosition
         leftFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftFrontDrive.setPower(leftFrontPower);
 
-        rightFrontDrive.setTargetPosition(rightFrontDrive.getCurrentPosition()+Pos); // Tells the motor that the position it should go to is desiredPosition
+        rightFrontDrive.setTargetPosition((rightFrontDrive.getCurrentPosition()+Pos)*1915); // Tells the motor that the position it should go to is desiredPosition
         rightFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         rightFrontDrive.setPower(rightFrontPower);
 
-        rightBackDrive.setTargetPosition(rightBackDrive.getCurrentPosition()+Pos); // Tells the motor that the position it should go to is desiredPosition
+        rightBackDrive.setTargetPosition((rightBackDrive.getCurrentPosition()+Pos)*1915); // Tells the motor that the position it should go to is desiredPosition
         rightBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         rightBackDrive.setPower(rightBackPower);
 
-        leftBackDrive.setTargetPosition(leftBackDrive.getCurrentPosition()+Pos); // Tells the motor that the position it should go to is desiredPosition
+        leftBackDrive.setTargetPosition((leftBackDrive.getCurrentPosition()+Pos)*1915); // Tells the motor that the position it should go to is desiredPosition
         leftBackDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftBackDrive.setPower(leftBackPower);
     }
