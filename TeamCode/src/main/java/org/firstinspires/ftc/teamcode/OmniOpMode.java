@@ -82,6 +82,10 @@ import java.util.HashMap;
 //git reset --hard origin/master
 //git pull
 
+// *--*
+// All the code is written by Aajinkya Naik unless stated otherwise.
+// *--*
+
 //BHI260AP is the IMU
 
 //The name of the Driver Hub config file is "ILoveDickstein" (dedicated to my dearest friend, Jacob Dickstein (who's a captain of 10847))
@@ -151,7 +155,6 @@ public class OmniOpMode extends LinearOpMode {
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
         linearSlidey.setDirection(DcMotor.Direction.REVERSE);
-        actuatorDrive.setDirection(DcMotor.Direction.REVERSE);
 
         leftFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -422,8 +425,7 @@ public class OmniOpMode extends LinearOpMode {
             telemetry.addData("Z - Yaw\t", "%4.2f", Yaw);
 
             telemetry.addData("Status", "Run Time: " + runtime.toString());
-            telemetry.addData("Mem", "Run Time: " + Runtime.getRuntime().maxMemory());
-            telemetry.addData("Mem", "Run Time: " + Runtime.getRuntime().freeMemory());
+            telemetry.addData("Button Test", "Run Time: " + ButtonMonitor.buttonMap.get(buttonName.cross));
             telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
             telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
             telemetry.addData("Left, Right, Turn", "%4.2f, %4.2f", LeftServo.getPosition(), RightServo.getPosition());
@@ -575,8 +577,8 @@ public class OmniOpMode extends LinearOpMode {
         left_bumper
     }
     private class Buttons {
-        public HashMap<buttonName, Status> buttonMap = new HashMap<>();
-        private HashMap<buttonName, Button> ButtonStorage = new HashMap<>();
+        public  final HashMap<buttonName, Status> buttonMap     = new HashMap<>();
+        private final HashMap<buttonName, Button> ButtonStorage = new HashMap<>();
         Gamepad gpad = new Gamepad();
         private boolean[] buttonList;
 

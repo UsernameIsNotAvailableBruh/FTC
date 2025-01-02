@@ -5,12 +5,17 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 //import com.qualcomm.robotcore.eventloop.opmode.OpMode; lower level version of LinearOpMode
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+
+// *--*
+// All the code is written by Aajinkya Naik unless stated otherwise.
+// *--*
 
 @Autonomous(name="AutoDickstein", group = "OpDicksteinModes")
 public class OmniAutoMode extends LinearOpMode {
@@ -21,6 +26,7 @@ public class OmniAutoMode extends LinearOpMode {
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
     private IMU BHI260AP = null;
+    private AutoReadData autoReadData;
 
     final double GearRatio3 =  2.89;
     final double GearRatio4 = 3.61;
@@ -40,10 +46,10 @@ public class OmniAutoMode extends LinearOpMode {
         leftBackDrive = hardwareMap.get(DcMotor.class, "leftBack"); //Motor 3 = left bottom
         BHI260AP = hardwareMap.get(IMU.class, "imu");
 
-        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
 
         IMU.Parameters IMUParams = new IMU.Parameters(
                 new RevHubOrientationOnRobot(
@@ -74,8 +80,6 @@ public class OmniAutoMode extends LinearOpMode {
         double LBDistance = WheelCircum*LBRevolutions;
         double RFDistance = WheelCircum*RFRevolutions;
         double RBDistance = WheelCircum*RBRevolutions;
-
-        GotoAtAngle(45,2, InchtoPos(6));
 
         telemetry.addData("Status", "Run Time: " + runtime.toString());
         telemetry.addLine("Encoder");
@@ -109,6 +113,31 @@ public class OmniAutoMode extends LinearOpMode {
 
         leftBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    }
+
+    enum Wheel {
+        LF,
+        RF,
+        LB,
+        RB,
+    }
+    public int PwrToPos(Wheel wheel, double pwr){
+        double Pos = 0;
+        switch (wheel) {
+            case LF:
+                 Pos = AutoReadData.LFm*pwr + AutoReadData.LFb;
+                 break;
+            case LB:
+                Pos = AutoReadData.LBm*pwr + AutoReadData.LBb;
+                break;
+            case RF:
+                Pos = AutoReadData.RFm*pwr + AutoReadData.RFb;
+                break;
+            case RB:
+                Pos = AutoReadData.RBm*pwr + AutoReadData.RBb;
+                break;
+        }
+        return (int) Pos;
     }
 
     public void GotoPositionForward(int Pos) {
@@ -165,7 +194,7 @@ public class OmniAutoMode extends LinearOpMode {
             rightBackPower  /= max;
         }
 
-        leftFrontDrive.setTargetPosition(leftFrontDrive.getCurrentPosition()+Pos); // Tells the motor that the position it should go to is desiredPosition
+        leftFrontDrive.setTargetPosition((leftFrontDrive.getCurrentPosition()+Pos)*1915 ); // Tells the motor that the position it should go to is desiredPosition
         leftFrontDrive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         leftFrontDrive.setPower(leftFrontPower);
 
