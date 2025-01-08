@@ -29,11 +29,17 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import android.media.MediaPlayer;
+import android.media.SoundPool;
+import android.os.Build;
+import android.view.SoundEffectConstants;
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -41,12 +47,16 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+
+import org.firstinspires.ftc.robotcore.external.android.AndroidSoundPool;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.internal.android.SoundPoolIntf;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 
 /*
@@ -105,8 +115,8 @@ public class OmniOpMode extends LinearOpMode {
     //private Servo TurnServo               = null;
     private DcMotor actuatorDrive         = null;
     private DcMotor slideyTurni           = null;
-    private DistanceSensor REV2mDistance  = null;
-
+    //private DistanceSensor REV2mDistance  = null;
+    private final static double LowerBy = 1.5;
     @Override
     public void runOpMode() {
         //https://gm0.org/en/latest/docs/software/tutorials/gamepad.html#storing-gamepad-state
@@ -129,7 +139,7 @@ public class OmniOpMode extends LinearOpMode {
         ExtendyServo = hardwareMap.get(Servo.class, "serv3");
 
         BHI260AP = hardwareMap.get(IMU.class, "imu");
-        REV2mDistance = hardwareMap.get(DistanceSensor.class, "sensi");
+        //REV2mDistance = hardwareMap.get(DistanceSensor.class, "sensi");
 
         IMU.Parameters IMUParams = new IMU.Parameters(
                 new RevHubOrientationOnRobot(
@@ -150,7 +160,7 @@ public class OmniOpMode extends LinearOpMode {
         // when you first test your robot, push the left joystick forward and observe the direction the wheels turn.
         // Reverse the direction (flip FORWARD <-> REVERSE ) of any wheel that runs backward
         // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward.
-        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
@@ -193,6 +203,7 @@ public class OmniOpMode extends LinearOpMode {
 
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
+
         telemetry.update();
         waitForStart();
         runtime.reset();
@@ -201,7 +212,8 @@ public class OmniOpMode extends LinearOpMode {
         Thread gamepad2Thread = new Thread( new Gamepad2Thread() );
         gamepad2Thread.setDaemon(false);
         gamepad2Thread.start();
-        double LowerPowerBy = 1.5;
+        double LowerPowerBy = 1;
+        boolean LowerModeToggle = false;
         double YawOffset = 0;
         Buttons ButtonMonitor = new Buttons(false);
         RightServo.setDirection(Servo.Direction.REVERSE);
@@ -209,6 +221,7 @@ public class OmniOpMode extends LinearOpMode {
         RightServo.setPosition(0);
         BHI260AP.resetYaw();
         setZPBrake(false);
+        boolean ZPFloatToggle = false;
         while (opModeIsActive()) {
             //previousGamepad1.copy(currentGamepad1); //gamepad from last iteration
             //currentGamepad1.copy(gamepad1);
@@ -219,18 +232,23 @@ public class OmniOpMode extends LinearOpMode {
             int rightBackDriveEncoderPos  = rightBackDrive.getCurrentPosition();
             int leftBackDriveEncoderPos   = leftBackDrive.getCurrentPosition();
 
-            if (ButtonMonitor.isPressed(buttonName.options) && ButtonMonitor.Pressed(buttonName.triangle)) {
-                setZPBrake(false);
+            if (ButtonMonitor.wasPressed(buttonName.options)) {
+                ZPFloatToggle = !ZPFloatToggle;
             }
-            else if (ButtonMonitor.isPressed(buttonName.options)) {
-                setZPFloat(false);
+            if (ZPFloatToggle) {
+                setZPFloat(true);
+            } else {
+                setZPBrake(true);
             }
 
-            if (ButtonMonitor.isPressed(buttonName.share) && ButtonMonitor.Pressed(buttonName.triangle)){
-                LowerPowerBy = 1;
+            if (ButtonMonitor.wasPressed(buttonName.share)){
+                LowerModeToggle = !LowerModeToggle;
             }
-            else if (ButtonMonitor.isPressed(buttonName.share)){
-                LowerPowerBy = 1.5;
+            if (LowerModeToggle) {
+                LowerPowerBy = LowerBy;
+            }
+            else {
+                LowerPowerBy = 1;
             }
 
             // Rising Edge Detector to dance
@@ -292,9 +310,9 @@ public class OmniOpMode extends LinearOpMode {
             double Pitch = robotOrientation.secondAngle; // Y - Pitch
             double Yaw   = robotOrientation.thirdAngle; // Z - Yaw
 
-            if (ButtonMonitor.Pressed(buttonName.cross) || gamepad1.cross)
+            if (ButtonMonitor.wasPressed(buttonName.cross))
                 YawOffset = resetYaw();
-            if (ButtonMonitor.Pressed(buttonName.square) || gamepad1.square)
+            if (ButtonMonitor.wasPressed(buttonName.square))
                 BHI260AP.resetYaw();
 
             double Direction1 = Math.sin(theta + Math.PI/4 - YawOffset); // https://www.desmos.com/calculator/rqqamhfeek
@@ -356,13 +374,13 @@ public class OmniOpMode extends LinearOpMode {
             leftBackPower += gamepad1.right_trigger;
             rightBackPower -= gamepad1.right_trigger;
 
-            if (ButtonMonitor.Pressed(buttonName.right_bumper)) {
+            if (ButtonMonitor.wasPressed(buttonName.right_bumper)) {
                 leftFrontPower  = 1;
                 rightFrontPower = -1;
                 leftBackPower   = 1;
                 rightBackPower  = -1;
             }
-            else if (ButtonMonitor.Pressed(buttonName.left_bumper)) {
+            else if (ButtonMonitor.wasPressed(buttonName.left_bumper)) {
                 leftFrontPower  = -1;
                 rightFrontPower = 1;
                 leftBackPower   = -1;
@@ -375,10 +393,10 @@ public class OmniOpMode extends LinearOpMode {
             if (ButtonMonitor.Pressed(buttonName.right_stick_button)) //stop rumbles
                 gamepad1.stopRumble();
 
-            leftFrontPower /= LowerPowerBy;
-            rightFrontPower /= LowerPowerBy;
-            leftBackPower /= LowerPowerBy;
-            rightBackPower /= LowerPowerBy;
+            leftFrontPower *= 2;
+            rightFrontPower *= 2;
+            leftBackPower *= 2;
+            rightBackPower *= 2;
 
             // Normalize the values so no wheel  power exceeds 100%
             // This ensures that the robot maintains the desired motion.
@@ -387,11 +405,16 @@ public class OmniOpMode extends LinearOpMode {
             max = Math.max(max, Math.abs(rightBackPower));
 
             if (max > 1.0) {
-                leftFrontPower  /= max;
-                rightFrontPower /= max;
-                leftBackPower   /= max;
-                rightBackPower  /= max;
+                leftFrontPower  /= max ;
+                rightFrontPower /= max ;
+                leftBackPower   /= max ;
+                rightBackPower  /= max ;
             }
+
+            leftFrontPower /= LowerPowerBy;
+            rightFrontPower /= LowerPowerBy;
+            leftBackPower /= LowerPowerBy;
+            rightBackPower /= LowerPowerBy;
 
 
             // This is test code:
@@ -420,18 +443,21 @@ public class OmniOpMode extends LinearOpMode {
             // Show the elapsed game time and wheel power.
 
             telemetry.addData("Theta value\t", "%4.2f", theta);
+            telemetry.addData("Theta value (deg)\t", "%4.2f", (theta*(180/Math.PI)+360)%360);
+            telemetry.addLine();
             telemetry.addData("X - Roll\t", "%4.2f", Roll);
             telemetry.addData("Y - Pitch\t", "%4.2f", Pitch);
             telemetry.addData("Z - Yaw\t", "%4.2f", Yaw);
-
+            telemetry.addLine();
             telemetry.addData("Status", "Run Time: " + runtime.toString());
-            telemetry.addData("Button Test", "Run Time: " + ButtonMonitor.buttonMap.get(buttonName.cross));
+            telemetry.addData("Button Test  ", ButtonMonitor.buttonMap.get(buttonName.dpad_up));
+            telemetry.addData("Button Test 2", ButtonMonitor.buttonMap.get(buttonName.dpad_down));
             telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
             telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
-            telemetry.addData("Left, Right, Turn", "%4.2f, %4.2f", LeftServo.getPosition(), RightServo.getPosition());
-            telemetry.addData("Front left/Right", "%d, %d", leftFrontDriveEncoderPos, rightFrontDriveEncoderPos);
-            telemetry.addData("Back left/Right","%d, %d", rightBackDriveEncoderPos, leftBackDriveEncoderPos);
-            telemetry.addData("2m Dis", "Inch: %1.3f, Cm: %1.3f", REV2mDistance.getDistance(DistanceUnit.INCH), REV2mDistance.getDistance(DistanceUnit.CM));
+            telemetry.addData("Left/Right (Servos)", "%4.2f, %4.2f", LeftServo.getPosition(), RightServo.getPosition());
+            telemetry.addData("Front left/Right Encoders", "%d, %d", leftFrontDriveEncoderPos, rightFrontDriveEncoderPos);
+            telemetry.addData("Back left/Right Encoders","%d, %d", rightBackDriveEncoderPos, leftBackDriveEncoderPos);
+            //telemetry.addData("2m Dis", "Inch: %1.3f, Cm: %1.3f", REV2mDistance.getDistance(DistanceUnit.INCH), REV2mDistance.getDistance(DistanceUnit.CM));
             telemetry.update();
         }
     }
@@ -453,6 +479,7 @@ public class OmniOpMode extends LinearOpMode {
         rightBackDrive.setPower(1);
         sleep(1500);
     }
+
     private void setZPFloat(boolean isGamepad2) {
         if (isGamepad2) {
             linearSlidey.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
@@ -479,6 +506,7 @@ public class OmniOpMode extends LinearOpMode {
             rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         }
     }
+
     private double resetYaw() {
         double Yaw = BHI260AP.getRobotOrientation(
                 AxesReference.INTRINSIC,
@@ -493,10 +521,12 @@ public class OmniOpMode extends LinearOpMode {
 //            Gamepad currentGamepad2  = new Gamepad();
 //            Gamepad previousGamepad2 = new Gamepad();
             boolean ClawToggle = true;
+            boolean ZPFloatToggle = true;
             Buttons ButtonMonitor = new Buttons(true);
             double LowerPowerBy = 1;
+            boolean LowerModeToggle = false;
             double ExtendAmtPos = 0;
-
+            setZPFloat(true);
             while (opModeIsActive()) {
 //                previousGamepad2.copy(currentGamepad2);
 //                currentGamepad2.copy(gamepad2);
@@ -507,21 +537,26 @@ public class OmniOpMode extends LinearOpMode {
                 if (ButtonMonitor.Pressed(buttonName.right_stick_button))
                     gamepad2.stopRumble();
 
-                if (ButtonMonitor.isPressed(buttonName.options) && ButtonMonitor.Pressed(buttonName.triangle)) {
+                if (ButtonMonitor.wasPressed(buttonName.options)) {
+                    ZPFloatToggle = !ZPFloatToggle;
+                }
+                if (ZPFloatToggle) {
+                    setZPFloat(true);
+                } else {
                     setZPBrake(true);
                 }
-                else if (ButtonMonitor.isPressed(buttonName.options)) {
-                    setZPFloat(true);
-                }
 
-                if (ButtonMonitor.isPressed(buttonName.share)  && ButtonMonitor.Pressed(buttonName.triangle)){
-                    LowerPowerBy = 1.5;
+                if (ButtonMonitor.wasPressed(buttonName.share)){
+                    LowerModeToggle = !LowerModeToggle;
                 }
-                else if (ButtonMonitor.isPressed(buttonName.share)){
+                if (LowerModeToggle) {
+                    LowerPowerBy = LowerBy;
+                }
+                else {
                     LowerPowerBy = 1;
                 }
 
-                if (ButtonMonitor.isPressed(buttonName.cross)) {
+                if (ButtonMonitor.wasPressed(buttonName.cross)) {
                     ClawToggle = !ClawToggle;
                 }
                 if (ClawToggle) {
@@ -533,15 +568,16 @@ public class OmniOpMode extends LinearOpMode {
                     RightServo.setPosition(0);
                 }
 
-                if (ButtonMonitor.isPressed(buttonName.dpad_left) && ButtonMonitor.isPressed(buttonName.dpad_right)) {
-                    ExtendAmtPos = .5;
-                }
-                else if (ButtonMonitor.Pressed(buttonName.dpad_left)) {
-                    ExtendAmtPos = .999;
-                }
-                else if (ButtonMonitor.Pressed(buttonName.dpad_right)) {
-                    ExtendAmtPos = 0;
-                }
+//                if (ButtonMonitor.isPressed(buttonName.dpad_left) && ButtonMonitor.isPressed(buttonName.dpad_right)) {
+//                    ExtendAmtPos = .5;
+//                }
+//                else if (ButtonMonitor.Pressed(buttonName.dpad_left)) {
+//                    ExtendAmtPos = .999;
+//                }
+//                else if (ButtonMonitor.Pressed(buttonName.dpad_right)) {
+//                    ExtendAmtPos = 0;
+//                }
+
                 double Slidey = -gamepad2.right_stick_y/LowerPowerBy;
                 double Acturio = -gamepad2.left_stick_y/LowerPowerBy;
                 ExtendyServo.setPosition(ExtendAmtPos);
@@ -576,18 +612,21 @@ public class OmniOpMode extends LinearOpMode {
         right_bumper,
         left_bumper
     }
+    enum Gpads { //GP stands for gamepad
+        GP1,
+        GP2
+    }
     private class Buttons {
-        public  final HashMap<buttonName, Status> buttonMap     = new HashMap<>();
-        private final HashMap<buttonName, Button> ButtonStorage = new HashMap<>();
-        Gamepad gpad = new Gamepad();
+        public  final EnumMap<buttonName, Status> buttonMap     = new EnumMap<buttonName, Status>(buttonName.class);
+        private final EnumMap<buttonName, Button> ButtonStorage = new EnumMap<buttonName, Button>(buttonName.class);
+        private Gpads GP;
+        private Gamepad gpad = new Gamepad();
         private boolean[] buttonList;
 
         public Buttons(boolean isGamepad2) {
-            if (!isGamepad2) {
-                gpad.copy(gamepad1);
-            }
-            else {
-                gpad.copy(gamepad2);
+            GP = Gpads.GP1;
+            if (isGamepad2) {
+                GP = Gpads.GP2;
             }
             for (buttonName button : buttonName.values()) {
                 ButtonStorage.put(button, new Button());
@@ -606,11 +645,17 @@ public class OmniOpMode extends LinearOpMode {
             return buttonMap.get(button) == Status.currentlyPressed;
         }
 
-        public boolean notPressed(buttonName button) {
+        public boolean NotPressed(buttonName button){
             return buttonMap.get(button) == Status.notPressedYet;
         }
 
         public void update(){
+            if (GP == Gpads.GP1) {
+                gpad.copy(gamepad1);
+            }
+            else {
+                gpad.copy(gamepad2);
+            }
             buttonList = new boolean[] {gpad.options, gpad.triangle, gpad.share, gpad.cross, gpad.square, gpad.circle, gpad.left_stick_button, gpad.right_stick_button, gpad.dpad_left, gpad.dpad_right, gpad.dpad_up, gpad.dpad_down, gpad.right_bumper, gpad.left_bumper};
             buttonName[] ButtonArr = buttonName.values();
             for (int i=0; i<buttonList.length; i++) {
@@ -620,9 +665,8 @@ public class OmniOpMode extends LinearOpMode {
 
         private class Button { //class in a class in a class for funsies
             private Status status = Status.notPressedYet;
-
             public Status ButtonStatus(boolean button) {
-                if (button && status == Status.notPressedYet)
+                if ( (button && status == Status.notPressedYet))
                     status = Status.currentlyPressed;
                 else if (!button && status == Status.currentlyPressed)
                     status = Status.wasPressed;
