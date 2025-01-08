@@ -111,7 +111,7 @@ public class OmniOpMode extends LinearOpMode {
     private IMU BHI260AP                  = null;
     private Servo LeftServo               = null;
     private Servo RightServo              = null;
-    private Servo ExtendyServo            = null;
+    //private Servo ExtendyServo            = null;
     //private Servo TurnServo               = null;
     private DcMotor actuatorDrive         = null;
     private DcMotor slideyTurni           = null;
@@ -136,7 +136,7 @@ public class OmniOpMode extends LinearOpMode {
 
         LeftServo = hardwareMap.get(Servo.class, "serv1"); //port 0 - the one closer to the linear slider
         RightServo = hardwareMap.get(Servo.class, "serv2"); //port 1
-        ExtendyServo = hardwareMap.get(Servo.class, "serv3");
+        //ExtendyServo = hardwareMap.get(Servo.class, "serv3");
 
         BHI260AP = hardwareMap.get(IMU.class, "imu");
         //REV2mDistance = hardwareMap.get(DistanceSensor.class, "sensi");
@@ -217,8 +217,6 @@ public class OmniOpMode extends LinearOpMode {
         double YawOffset = 0;
         Buttons ButtonMonitor = new Buttons(false);
         RightServo.setDirection(Servo.Direction.REVERSE);
-        LeftServo.setPosition(0);
-        RightServo.setPosition(0);
         BHI260AP.resetYaw();
         setZPBrake(false);
         boolean ZPFloatToggle = false;
@@ -407,7 +405,6 @@ public class OmniOpMode extends LinearOpMode {
             if (max > 1.0) {
                 leftFrontPower  /= max ;
                 rightFrontPower /= max ;
-                leftBackPower   /= max ;
                 rightBackPower  /= max ;
             }
 
@@ -457,6 +454,8 @@ public class OmniOpMode extends LinearOpMode {
             telemetry.addData("Left/Right (Servos)", "%4.2f, %4.2f", LeftServo.getPosition(), RightServo.getPosition());
             telemetry.addData("Front left/Right Encoders", "%d, %d", leftFrontDriveEncoderPos, rightFrontDriveEncoderPos);
             telemetry.addData("Back left/Right Encoders","%d, %d", rightBackDriveEncoderPos, leftBackDriveEncoderPos);
+            telemetry.addData("Slidey Encoders","%d", slideyTurni.getCurrentPosition());
+            telemetry.addData("Slidey Encoders","%d", linearSlidey.getCurrentPosition());
             //telemetry.addData("2m Dis", "Inch: %1.3f, Cm: %1.3f", REV2mDistance.getDistance(DistanceUnit.INCH), REV2mDistance.getDistance(DistanceUnit.CM));
             telemetry.update();
         }
@@ -526,7 +525,10 @@ public class OmniOpMode extends LinearOpMode {
             double LowerPowerBy = 1;
             boolean LowerModeToggle = false;
             double ExtendAmtPos = 0;
+            double ActuatorPower = .2;
             setZPFloat(true);
+            LeftServo.setPosition(.5);
+            RightServo.setPosition(.5);
             while (opModeIsActive()) {
 //                previousGamepad2.copy(currentGamepad2);
 //                currentGamepad2.copy(gamepad2);
@@ -560,12 +562,12 @@ public class OmniOpMode extends LinearOpMode {
                     ClawToggle = !ClawToggle;
                 }
                 if (ClawToggle) {
-                    LeftServo.setPosition(.5);
-                    RightServo.setPosition(.5);
+                    LeftServo.setPosition(.7);
+                    RightServo.setPosition(.7);
                 }
                 else {
-                    LeftServo.setPosition(0);
-                    RightServo.setPosition(0);
+                    LeftServo.setPosition(.3);
+                    RightServo.setPosition(.3);
                 }
 
 //                if (ButtonMonitor.isPressed(buttonName.dpad_left) && ButtonMonitor.isPressed(buttonName.dpad_right)) {
@@ -580,10 +582,17 @@ public class OmniOpMode extends LinearOpMode {
 
                 double Slidey = -gamepad2.right_stick_y/LowerPowerBy;
                 double Acturio = -gamepad2.left_stick_y/LowerPowerBy;
-                ExtendyServo.setPosition(ExtendAmtPos);
+                //ExtendyServo.setPosition(ExtendAmtPos);
                 linearSlidey.setPower(Slidey);
+                if (linearSlidey.getCurrentPosition() > 3000) {
+                    linearSlidey.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                    linearSlidey.setTargetPosition(3000);
+                    linearSlidey.setPower(.5);
+                    linearSlidey.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                }
                 actuatorDrive.setPower(Acturio);
-                slideyTurni.setPower((gamepad2.left_trigger-gamepad2.right_trigger)/LowerPowerBy);
+                ActuatorPower = (gamepad2.left_trigger - gamepad2.right_trigger) / LowerPowerBy;
+                slideyTurni.setPower(ActuatorPower);
             }
         }
     }
