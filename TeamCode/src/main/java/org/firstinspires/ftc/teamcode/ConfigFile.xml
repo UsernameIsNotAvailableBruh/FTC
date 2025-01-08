@@ -15,7 +15,6 @@
             <Servo name="serv1" port="0" />
             <Servo name="serv2" port="1" />
             <Servo name="serv3" port="2" />
-            <Servo name="Extendy" port="3" />
             <ControlHubImuBHI260AP name="imu" port="0" bus="0" />
             <REV_VL53L0X_RANGE_SENSOR name="sensi" port="1" bus="0" />
         </LynxModule>

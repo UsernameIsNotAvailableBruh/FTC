@@ -57,8 +57,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.robotcore.internal.android.SoundPoolIntf;
 
 import java.util.EnumMap;
-import java.util.HashMap;
-
+stuff
 /*
  * This file contains an example of a Linear "OpMode".
  * An OpMode is a 'program' that runs in either the autonomous or the teleop period of an FTC match.
@@ -212,6 +211,7 @@ public class OmniOpMode extends LinearOpMode {
         Thread gamepad2Thread = new Thread( new Gamepad2Thread() );
         gamepad2Thread.setDaemon(false);
         gamepad2Thread.start();
+
         double LowerPowerBy = 1;
         boolean LowerModeToggle = false;
         double YawOffset = 0;
@@ -384,7 +384,7 @@ public class OmniOpMode extends LinearOpMode {
                 leftBackPower   = -1;
                 rightBackPower  = 1;
             }
-            YawOffset = resetYaw();
+            //YawOffset = resetYaw();
 
             if (ButtonMonitor.Pressed(buttonName.left_stick_button)) //make the other controller rumble
                 gamepad2.rumble(100);
@@ -412,7 +412,6 @@ public class OmniOpMode extends LinearOpMode {
             rightFrontPower /= LowerPowerBy;
             leftBackPower /= LowerPowerBy;
             rightBackPower /= LowerPowerBy;
-
 
             // This is test code:
             //
@@ -517,15 +516,14 @@ public class OmniOpMode extends LinearOpMode {
 
     public class Gamepad2Thread implements Runnable {
         public void run() {
-//            Gamepad currentGamepad2  = new Gamepad();
-//            Gamepad previousGamepad2 = new Gamepad();
             boolean ClawToggle = true;
             boolean ZPFloatToggle = true;
             Buttons ButtonMonitor = new Buttons(true);
             double LowerPowerBy = 1;
             boolean LowerModeToggle = false;
-            double ExtendAmtPos = 0;
-            double ActuatorPower = .2;
+//            double ExtendAmtPos = 0;
+            double LinearTurniPower = .2;
+            int LinearCurrentPos = 0;
             setZPFloat(true);
             LeftServo.setPosition(.5);
             RightServo.setPosition(.5);
@@ -566,8 +564,8 @@ public class OmniOpMode extends LinearOpMode {
                     RightServo.setPosition(.7);
                 }
                 else {
-                    LeftServo.setPosition(.3);
-                    RightServo.setPosition(.3);
+                    LeftServo.setPosition(.15);
+                    RightServo.setPosition(.15);
                 }
 
 //                if (ButtonMonitor.isPressed(buttonName.dpad_left) && ButtonMonitor.isPressed(buttonName.dpad_right)) {
@@ -584,15 +582,10 @@ public class OmniOpMode extends LinearOpMode {
                 double Acturio = -gamepad2.left_stick_y/LowerPowerBy;
                 //ExtendyServo.setPosition(ExtendAmtPos);
                 linearSlidey.setPower(Slidey);
-                if (linearSlidey.getCurrentPosition() > 3000) {
-                    linearSlidey.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                    linearSlidey.setTargetPosition(3000);
-                    linearSlidey.setPower(.5);
-                    linearSlidey.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                }
+                //TODO: add limit thingy and gravity thingy
                 actuatorDrive.setPower(Acturio);
-                ActuatorPower = (gamepad2.left_trigger - gamepad2.right_trigger) / LowerPowerBy;
-                slideyTurni.setPower(ActuatorPower);
+                LinearTurniPower = (gamepad2.left_trigger - gamepad2.right_trigger) / LowerPowerBy;
+                slideyTurni.setPower(LinearTurniPower);
             }
         }
     }
