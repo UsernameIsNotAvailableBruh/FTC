@@ -31,7 +31,7 @@ public class OmniAutoMode extends LinearOpMode {
     final double GearRatio4 = 3.61;
     final double GearRatio5 = 5.23;
     final double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
-    final double goBILDAWheel = 3.77953; //96 mm -> in
+    final double goBILDAWheel = 3.77953; //96 mm -> in \\diameter
     final double WheelCircum = Math.PI * goBILDAWheel;
 
     @Override

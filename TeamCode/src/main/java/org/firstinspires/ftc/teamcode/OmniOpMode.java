@@ -34,6 +34,7 @@ import android.media.SoundPool;
 import android.os.Build;
 import android.view.SoundEffectConstants;
 
+import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -43,6 +44,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.configuration.ConfigurationType;
+import com.qualcomm.robotcore.hardware.configuration.typecontainers.MotorConfigurationType;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import com.qualcomm.robotcore.hardware.IMU;
@@ -54,10 +57,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.TempUnit;
 import org.firstinspires.ftc.robotcore.internal.android.SoundPoolIntf;
 
 import java.util.EnumMap;
-stuff
+import java.util.List;
+
 /*
  * This file contains an example of a Linear "OpMode".
  * An OpMode is a 'program' that runs in either the autonomous or the teleop period of an FTC match.
@@ -116,6 +121,7 @@ public class OmniOpMode extends LinearOpMode {
     private DcMotor slideyTurni           = null;
     //private DistanceSensor REV2mDistance  = null;
     private final static double LowerBy = 1.5;
+    private static boolean GP2Initialized = false;
     @Override
     public void runOpMode() {
         //https://gm0.org/en/latest/docs/software/tutorials/gamepad.html#storing-gamepad-state
@@ -163,21 +169,18 @@ public class OmniOpMode extends LinearOpMode {
         leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
         rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
-        linearSlidey.setDirection(DcMotor.Direction.REVERSE);
 
         leftFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightFrontDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftBackDrive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        linearSlidey.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        slideyTurni.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
 
         leftFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         leftBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        linearSlidey.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        slideyTurni.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
 
         //double GearRatio3 =  2.89;
         double GearRatio4 = 3.61;
@@ -201,16 +204,27 @@ public class OmniOpMode extends LinearOpMode {
         gamepad1.runLedEffect(Led.build());
 
         // Wait for the game to start (driver presses START)
-        telemetry.addData("Status", "Initialized");
 
         telemetry.update();
-        waitForStart();
-        runtime.reset();
+        List<LynxModule> Hubs = hardwareMap.getAll(LynxModule.class); //I took this lynx thingy from gm0's bulk reads page https://gm0.org/en/latest/docs/software/tutorials/bulk-reads.html
 
-        // run until the end of the match (driver presses STOP)
+        for (LynxModule hub : Hubs) {
+            hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
+        }
         Thread gamepad2Thread = new Thread( new Gamepad2Thread() );
         gamepad2Thread.setDaemon(false);
         gamepad2Thread.start();
+        waitForStart();
+        while (!GP2Initialized) {
+            // this is only here to avoid a race condition with the telemetry.addDatas (in GP2 thread and the telemetry line below).
+            // (im not sure if addData is threadsafe)
+            sleep(100);
+        }
+        telemetry.addData("Status", "Initialized");
+        runtime.reset();
+
+        // run until the end of the match (driver presses STOP)
+
 
         double LowerPowerBy = 1;
         boolean LowerModeToggle = false;
@@ -223,6 +237,7 @@ public class OmniOpMode extends LinearOpMode {
         while (opModeIsActive()) {
             //previousGamepad1.copy(currentGamepad1); //gamepad from last iteration
             //currentGamepad1.copy(gamepad1);
+
             ButtonMonitor.update();
 
             int leftFrontDriveEncoderPos  = leftFrontDrive.getCurrentPosition();
@@ -361,7 +376,6 @@ public class OmniOpMode extends LinearOpMode {
             //    rightBackPower  = Dpadirection1 * hypotenuse; //  1
             //}
 
-
             leftFrontPower -= gamepad1.left_trigger;
             rightFrontPower += gamepad1.left_trigger;
             leftBackPower -= gamepad1.left_trigger;
@@ -446,8 +460,8 @@ public class OmniOpMode extends LinearOpMode {
             telemetry.addData("Z - Yaw\t", "%4.2f", Yaw);
             telemetry.addLine();
             telemetry.addData("Status", "Run Time: " + runtime.toString());
-            telemetry.addData("Button Test  ", ButtonMonitor.buttonMap.get(buttonName.dpad_up));
-            telemetry.addData("Button Test 2", ButtonMonitor.buttonMap.get(buttonName.dpad_down));
+            telemetry.addData("Pressed, Low Power Mode?", "%s %s", ButtonMonitor.buttonMap.get(buttonName.share).toString(), LowerModeToggle? "yuh" : "nuh");
+            telemetry.addData("Pressed, Float Mode?", "%s %s", ButtonMonitor.buttonMap.get(buttonName.options).toString(), ZPFloatToggle? "Float" : "Brake");
             telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
             telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
             telemetry.addData("Left/Right (Servos)", "%4.2f, %4.2f", LeftServo.getPosition(), RightServo.getPosition());
@@ -455,6 +469,7 @@ public class OmniOpMode extends LinearOpMode {
             telemetry.addData("Back left/Right Encoders","%d, %d", rightBackDriveEncoderPos, leftBackDriveEncoderPos);
             telemetry.addData("Slidey Encoders","%d", slideyTurni.getCurrentPosition());
             telemetry.addData("Slidey Encoders","%d", linearSlidey.getCurrentPosition());
+            telemetry.addData("Slidey Power", "%.2f", slideyTurni.getPower());
             //telemetry.addData("2m Dis", "Inch: %1.3f, Cm: %1.3f", REV2mDistance.getDistance(DistanceUnit.INCH), REV2mDistance.getDistance(DistanceUnit.CM));
             telemetry.update();
         }
@@ -516,17 +531,33 @@ public class OmniOpMode extends LinearOpMode {
 
     public class Gamepad2Thread implements Runnable {
         public void run() {
+            linearSlidey.setDirection(DcMotor.Direction.REVERSE);
+            slideyTurni.setDirection(DcMotorSimple.Direction.REVERSE);
+
+            linearSlidey.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            slideyTurni.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+            linearSlidey.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            slideyTurni.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
             boolean ClawToggle = true;
             boolean ZPFloatToggle = true;
             Buttons ButtonMonitor = new Buttons(true);
             double LowerPowerBy = 1;
             boolean LowerModeToggle = false;
 //            double ExtendAmtPos = 0;
-            double LinearTurniPower = .2;
+            // double LinearTurniPower = .2;
             int LinearCurrentPos = 0;
+            int SlideTurniCurrentPos = 0;
             setZPFloat(true);
             LeftServo.setPosition(.5);
             RightServo.setPosition(.5);
+            double ActurioPower = 0;
+            telemetry.addData("Status", "Initialized");
+            GP2Initialized = true;
+            double idlePower = 0;
+            boolean idleToggle = false;
+            waitForStart();
             while (opModeIsActive()) {
 //                previousGamepad2.copy(currentGamepad2);
 //                currentGamepad2.copy(gamepad2);
@@ -564,8 +595,8 @@ public class OmniOpMode extends LinearOpMode {
                     RightServo.setPosition(.7);
                 }
                 else {
-                    LeftServo.setPosition(.15);
-                    RightServo.setPosition(.15);
+                    LeftServo.setPosition(.1);
+                    RightServo.setPosition(.1);
                 }
 
 //                if (ButtonMonitor.isPressed(buttonName.dpad_left) && ButtonMonitor.isPressed(buttonName.dpad_right)) {
@@ -578,14 +609,73 @@ public class OmniOpMode extends LinearOpMode {
 //                    ExtendAmtPos = 0;
 //                }
 
-                double Slidey = -gamepad2.right_stick_y/LowerPowerBy;
-                double Acturio = -gamepad2.left_stick_y/LowerPowerBy;
+                double SlideyPower = -gamepad2.left_stick_y/LowerPowerBy;
                 //ExtendyServo.setPosition(ExtendAmtPos);
-                linearSlidey.setPower(Slidey);
-                //TODO: add limit thingy and gravity thingy
-                actuatorDrive.setPower(Acturio);
-                LinearTurniPower = (gamepad2.left_trigger - gamepad2.right_trigger) / LowerPowerBy;
-                slideyTurni.setPower(LinearTurniPower);
+
+                LinearCurrentPos = linearSlidey.getCurrentPosition();
+                final int LinearSlideyLimit = 50000;
+                if (linearSlidey.getCurrentPosition() > LinearSlideyLimit) {
+                    linearSlidey.setTargetPosition(LinearSlideyLimit);
+                    linearSlidey.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    linearSlidey.setPower(.1);
+                }
+                else if (SlideyPower == 0) {
+                    linearSlidey.setTargetPosition(LinearCurrentPos);
+                    linearSlidey.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    linearSlidey.setPower(.4);
+                }
+                else {
+                    if (linearSlidey.getMode() == DcMotor.RunMode.RUN_TO_POSITION){
+                        linearSlidey.setTargetPosition(LinearSlideyLimit-10);
+                    }
+                    linearSlidey.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    int closeness = 250;
+                    if (linearSlidey.getCurrentPosition() >= LinearSlideyLimit-closeness) { // close to the top
+                        linearSlidey.setPower(SlideyPower/LowerBy);
+                    }
+                    else {
+                        linearSlidey.setPower(SlideyPower);
+                    }
+                }
+
+                actuatorDrive.setPower(0);
+                if (ButtonMonitor.wasPressed(buttonName.dpad_up)){
+                    actuatorDrive.setPower(1/LowerPowerBy);
+                }
+                else if (ButtonMonitor.wasPressed(buttonName.dpad_down)){
+                    actuatorDrive.setPower(-1/LowerPowerBy);
+                }
+
+
+                //TODO: add angle thingy, limit thingy, and gravity thingy
+
+                double LinearTurniPower = (-gamepad2.right_stick_y) / LowerPowerBy;
+                final double GearRatio4 = 3.61;
+                final double GearRatio5 = 5.23;
+                final double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
+                //double SlideTurniAngle = SlideTurniCurrentPos/DriveHDHexMotorCPR *360;//no need to mod 360 (i think)
+                //slideyTurni.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                //slideyTurni.setTargetPosition(goToAngle(90));
+                //slideyTurni.setPower(.4);
+                final int LinearTurniLimit = 250;
+                if (SlideTurniCurrentPos > LinearTurniLimit) {//over limit
+                    slideyTurni.setTargetPosition(LinearTurniLimit-50);
+                    slideyTurni.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    slideyTurni.setDirection(DcMotorSimple.Direction.FORWARD);
+                    slideyTurni.setPower(idlePower+.2);
+                }
+                else { //power given (move)
+                    slideyTurni.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                    if (ButtonMonitor.isPressed(buttonName.circle)){
+                        idleToggle = !idleToggle;
+                        if (idleToggle){
+                            idlePower = LinearTurniPower;
+                        }
+                    }
+                    slideyTurni.setPower(idleToggle? idlePower: LinearTurniPower/(LowerBy*2));
+                    SlideTurniCurrentPos = slideyTurni.getCurrentPosition();
+                }
+
             }
         }
     }
