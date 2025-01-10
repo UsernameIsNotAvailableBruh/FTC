@@ -182,9 +182,9 @@ public class OmniOpMode extends LinearOpMode {
         leftBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
 
-        //double GearRatio3 =  2.89;
-        double GearRatio4 = 3.61;
-        double GearRatio5 = 5.23;
+        //final double GearRatio3 =  2.89;
+        final double GearRatio4 = 3.61;
+        final double GearRatio5 = 5.23;
         double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
 
         // Effects (just for funsies)
@@ -452,7 +452,7 @@ public class OmniOpMode extends LinearOpMode {
 
             // Show the elapsed game time and wheel power.
 
-            telemetry.addData("Theta value\t", "%4.2f", theta);
+            /*telemetry.addData("Theta value\t", "%4.2f", theta);
             telemetry.addData("Theta value (deg)\t", "%4.2f", (theta*(180/Math.PI)+360)%360);
             telemetry.addLine();
             telemetry.addData("X - Roll\t", "%4.2f", Roll);
@@ -466,12 +466,15 @@ public class OmniOpMode extends LinearOpMode {
             telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
             telemetry.addData("Left/Right (Servos)", "%4.2f, %4.2f", LeftServo.getPosition(), RightServo.getPosition());
             telemetry.addData("Front left/Right Encoders", "%d, %d", leftFrontDriveEncoderPos, rightFrontDriveEncoderPos);
-            telemetry.addData("Back left/Right Encoders","%d, %d", rightBackDriveEncoderPos, leftBackDriveEncoderPos);
-            telemetry.addData("Slidey Encoders","%d", slideyTurni.getCurrentPosition());
+            telemetry.addData("Back left/Right Encoders","%d, %d", rightBackDriveEncoderPos, leftBackDriveEncoderPos);*/
+            /*telemetry.addData("Slidey Encoders","%d", slideyTurni.getCurrentPosition());
             telemetry.addData("Slidey Encoders","%d", linearSlidey.getCurrentPosition());
             telemetry.addData("Slidey Power", "%.2f", slideyTurni.getPower());
+            int SlideTurniCurrentPos = slideyTurni.getCurrentPosition();
+            double SlideTurniAngle = (SlideTurniCurrentPos/DriveHDHexMotorCPR) *360;//no need to mod 360 (i think)
+            telemetry.addData("Slider Angle", SlideTurniAngle);*/
             //telemetry.addData("2m Dis", "Inch: %1.3f, Cm: %1.3f", REV2mDistance.getDistance(DistanceUnit.INCH), REV2mDistance.getDistance(DistanceUnit.CM));
-            telemetry.update();
+            /*telemetry.update();*/
         }
     }
     private void happyDanceRobot() {
@@ -532,7 +535,7 @@ public class OmniOpMode extends LinearOpMode {
     public class Gamepad2Thread implements Runnable {
         public void run() {
             linearSlidey.setDirection(DcMotor.Direction.REVERSE);
-            slideyTurni.setDirection(DcMotorSimple.Direction.REVERSE);
+            slideyTurni.setDirection(DcMotorSimple.Direction.FORWARD);
 
             linearSlidey.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             slideyTurni.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -550,13 +553,12 @@ public class OmniOpMode extends LinearOpMode {
             int LinearCurrentPos = 0;
             int SlideTurniCurrentPos = 0;
             setZPFloat(true);
-            LeftServo.setPosition(.5);
-            RightServo.setPosition(.5);
             double ActurioPower = 0;
             telemetry.addData("Status", "Initialized");
+            boolean SlideyToggle = false;
+            LeftServo.setPosition(.5);
+            RightServo.setPosition(.5);
             GP2Initialized = true;
-            double idlePower = 0;
-            boolean idleToggle = false;
             waitForStart();
             while (opModeIsActive()) {
 //                previousGamepad2.copy(currentGamepad2);
@@ -653,12 +655,17 @@ public class OmniOpMode extends LinearOpMode {
                 final double GearRatio4 = 3.61;
                 final double GearRatio5 = 5.23;
                 final double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
-                //double SlideTurniAngle = SlideTurniCurrentPos/DriveHDHexMotorCPR *360;//no need to mod 360 (i think)
-                //slideyTurni.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                //slideyTurni.setTargetPosition(goToAngle(90));
-                //slideyTurni.setPower(.4);
+                SlideTurniCurrentPos = slideyTurni.getCurrentPosition();
+                double SlideTurniAngle = (SlideTurniCurrentPos/DriveHDHexMotorCPR) *360;//no need to mod 360 (i think)
+                telemetry.addData("Slider Angle", SlideTurniAngle);
+                if (ButtonMonitor.wasPressed(buttonName.circle))
+                    SlideyToggle = !SlideyToggle;
+                slideyTurni.setDirection(SlideyToggle? DcMotorSimple.Direction.FORWARD: DcMotorSimple.Direction.REVERSE);
+                slideyTurni.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                slideyTurni.setTargetPosition(slideyGoToAngle(45));
+                slideyTurni.setPower(.01);
                 final int LinearTurniLimit = 250;
-                if (SlideTurniCurrentPos > LinearTurniLimit) {//over limit
+                /*if (slideyTurni.getCurrentPosition() > LinearTurniLimit) {//over limit
                     slideyTurni.setTargetPosition(LinearTurniLimit-50);
                     slideyTurni.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     slideyTurni.setDirection(DcMotorSimple.Direction.FORWARD);
@@ -674,9 +681,16 @@ public class OmniOpMode extends LinearOpMode {
                     }
                     slideyTurni.setPower(idleToggle? idlePower: LinearTurniPower/(LowerBy*2));
                     SlideTurniCurrentPos = slideyTurni.getCurrentPosition();
-                }
-
+                }*/
             }
+        }
+
+        public int slideyGoToAngle(double angle,){
+            final double GearRatio4 = 3.61;
+            final double GearRatio5 = 5.23;
+            final double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
+            final double WheelCircum = Math.PI * 2;
+            return (int) (slideyTurni.getCurrentPosition()/DriveHDHexMotorCPR)*360%360;
         }
     }
 
