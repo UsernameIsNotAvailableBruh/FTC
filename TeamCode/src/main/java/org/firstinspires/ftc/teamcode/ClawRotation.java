@@ -29,23 +29,23 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import static org.firstinspires.ftc.robotcore.internal.system.AppUtil.ROBOT_DATA_DIR;
+
 import com.qualcomm.hardware.lynx.LynxModule;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.ReadWriteFile;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 
 /*
@@ -88,12 +88,11 @@ import java.util.List;
 //BHI260AP is the IMU
 
 //The name of the Driver Hub config file is "ILoveDickstein" (dedicated to my dearest friend, Jacob Dickstein (who's a captain of 10847))
-@TeleOp(name="OpDickstein", group="OpMode")
-public class DebugClaw extends LinearOpMode {
+@TeleOp(name="BuggyDicksteinsClaw", group="OpMode")
+public class ClawRotation extends LinearOpMode {
     // Declare OpMode members for each of the 4 motors.
     private ElapsedTime runtime           = new ElapsedTime();
     private DcMotor linearSlidey          = null;
-    private IMU BHI260AP                  = null;
     private Servo LeftServo               = null;
     private Servo RightServo              = null;
     //private Servo ExtendyServo            = null;
@@ -139,7 +138,6 @@ public class DebugClaw extends LinearOpMode {
 
         telemetry.update();
         List<LynxModule> Hubs = hardwareMap.getAll(LynxModule.class); //I took this lynx thingy from gm0's bulk reads page https://gm0.org/en/latest/docs/software/tutorials/bulk-reads.html
-
         for (LynxModule hub : Hubs) {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
@@ -150,12 +148,11 @@ public class DebugClaw extends LinearOpMode {
         // run until the end of the match (driver presses STOP)
 
         RightServo.setDirection(Servo.Direction.REVERSE);
-        BHI260AP.resetYaw();
         setZPBrake(false);
         boolean ZPFloatToggle = true;
         boolean ClawToggle = true;
         linearSlidey.setDirection(DcMotor.Direction.REVERSE);
-        slideyTurni.setDirection(DcMotorSimple.Direction.FORWARD);
+        slideyTurni.setDirection(DcMotorSimple.Direction.REVERSE);
 
         linearSlidey.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         slideyTurni.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -176,157 +173,140 @@ public class DebugClaw extends LinearOpMode {
         boolean SlideyToggle = false;
         LeftServo.setPosition(.5);
         RightServo.setPosition(.5);
+        double idlePower = .3;
+        HashMap<Integer, Double> PostoPower = new HashMap<>();
         waitForStart();
         while (opModeIsActive()) {
-//                previousGamepad2.copy(currentGamepad2);
-//                currentGamepad2.copy(gamepad2);
-                ButtonMonitor.update();
+            ButtonMonitor.update();
 
-                if (ButtonMonitor.Pressed(buttonName.left_stick_button))
-                    gamepad1.rumble(100);
-                if (ButtonMonitor.Pressed(buttonName.right_stick_button))
-                    gamepad2.stopRumble();
+            if (ButtonMonitor.wasPressed(buttonName.options)) {
+                ZPFloatToggle = !ZPFloatToggle;
+            }
+            if (ZPFloatToggle) {
+                setZPFloat(true);
+            } else {
+                setZPBrake(true);
+            }
 
-                if (ButtonMonitor.wasPressed(buttonName.options)) {
-                    ZPFloatToggle = !ZPFloatToggle;
+            if (ButtonMonitor.wasPressed(buttonName.share)) {
+                LowerModeToggle = !LowerModeToggle;
+            }
+            if (LowerModeToggle) {
+                LowerPowerBy = LowerBy;
+            } else {
+                LowerPowerBy = 1;
+            }
+
+            double SlideyPower = -gamepad2.left_stick_y / LowerPowerBy;
+            //ExtendyServo.setPosition(ExtendAmtPos);
+
+            LinearCurrentPos = linearSlidey.getCurrentPosition();
+            final int LinearSlideyLimit = 50000; //TODO
+            if (linearSlidey.getCurrentPosition() > LinearSlideyLimit) {
+                linearSlidey.setTargetPosition(LinearSlideyLimit);
+                linearSlidey.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                linearSlidey.setPower(.1);
+            } else if (SlideyPower == 0) {
+                linearSlidey.setTargetPosition(LinearCurrentPos);
+                linearSlidey.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                linearSlidey.setPower(.2);
+            } else {
+                if (linearSlidey.getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
+                    linearSlidey.setTargetPosition(LinearSlideyLimit - 10);
                 }
-                if (ZPFloatToggle) {
-                    setZPFloat(true);
+                linearSlidey.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                int closeness = 250;
+                if (linearSlidey.getCurrentPosition() >= LinearSlideyLimit - closeness) { // close to the top
+                    linearSlidey.setPower(SlideyPower / LowerBy);
                 } else {
-                    setZPBrake(true);
+                    linearSlidey.setPower(SlideyPower);
                 }
+            }
 
-                if (ButtonMonitor.wasPressed(buttonName.share)) {
-                    LowerModeToggle = !LowerModeToggle;
-                }
-                if (LowerModeToggle) {
-                    LowerPowerBy = LowerBy;
-                } else {
-                    LowerPowerBy = 1;
-                }
+            actuatorDrive.setPower(0);
+            if (ButtonMonitor.wasPressed(buttonName.dpad_up)) {
+                actuatorDrive.setPower(1 / LowerPowerBy);
+            } else if (ButtonMonitor.wasPressed(buttonName.dpad_down)) {
+                actuatorDrive.setPower(-1 / LowerPowerBy);
+            }
 
-                if (ButtonMonitor.wasPressed(buttonName.cross)) {
-                    ClawToggle = !ClawToggle;
-                }
-                if (ClawToggle) {
-                    LeftServo.setPosition(.7);
-                    RightServo.setPosition(.7);
-                } else {
-                    LeftServo.setPosition(.1);
-                    RightServo.setPosition(.1);
-                }
+            //TODO: add angle thingy, limit thingy, and gravity thingy
 
-//                if (ButtonMonitor.isPressed(buttonName.dpad_left) && ButtonMonitor.isPressed(buttonName.dpad_right)) {
-//                    ExtendAmtPos = .5;
-//                }
-//                else if (ButtonMonitor.Pressed(buttonName.dpad_left)) {
-//                    ExtendAmtPos = .999;
-//                }
-//                else if (ButtonMonitor.Pressed(buttonName.dpad_right)) {
-//                    ExtendAmtPos = 0;
-//                }
+            double LinearTurniPower = (-gamepad2.right_stick_y) / (LowerPowerBy);
+            //final double GearRatio3 =  2.89;
 
-                double SlideyPower = -gamepad2.left_stick_y / LowerPowerBy;
-                //ExtendyServo.setPosition(ExtendAmtPos);
+            final double GearRatio4 = 3.61;
+            final double GearRatio5 = 5.23;
+            final double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
+            SlideTurniCurrentPos = slideyTurni.getCurrentPosition();
+            double SlideTurniAngle = (SlideTurniCurrentPos / DriveHDHexMotorCPR) * 360;//no need to mod 360 (i think)
 
-                LinearCurrentPos = linearSlidey.getCurrentPosition();
-                final int LinearSlideyLimit = 50000;
-                if (linearSlidey.getCurrentPosition() > LinearSlideyLimit) {
-                    linearSlidey.setTargetPosition(LinearSlideyLimit);
-                    linearSlidey.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    linearSlidey.setPower(.1);
-                } else if (SlideyPower == 0) {
-                    linearSlidey.setTargetPosition(LinearCurrentPos);
-                    linearSlidey.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    linearSlidey.setPower(.4);
-                } else {
-                    if (linearSlidey.getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
-                        linearSlidey.setTargetPosition(LinearSlideyLimit - 10);
-                    }
-                    linearSlidey.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                    int closeness = 250;
-                    if (linearSlidey.getCurrentPosition() >= LinearSlideyLimit - closeness) { // close to the top
-                        linearSlidey.setPower(SlideyPower / LowerBy);
-                    } else {
-                        linearSlidey.setPower(SlideyPower);
-                    }
-                }
+            if (ButtonMonitor.wasPressed(buttonName.circle)) {
+                PostoPower.put(SlideTurniCurrentPos, slideyTurni.getPower());
+            }
+            if (ButtonMonitor.wasPressed(buttonName.triangle)){
+                SlideyToggle = !SlideyToggle;
+            }
 
-                actuatorDrive.setPower(0);
-                if (ButtonMonitor.wasPressed(buttonName.dpad_up)) {
-                    actuatorDrive.setPower(1 / LowerPowerBy);
-                } else if (ButtonMonitor.wasPressed(buttonName.dpad_down)) {
-                    actuatorDrive.setPower(-1 / LowerPowerBy);
-                }
+            if (slideyPostoAngle(slideyTurni.getCurrentPosition()) > 90+45) {//over limit
+                slideyTurni.setPower(-.35);
+            }
+            else {
+                slideyTurni.setPower(.35);
+            }
+            if (ButtonMonitor.isPressed(buttonName.left_bumper)) {
+                slideyTurni.setPower(slideyTurni.getPower()+.45);
+            }
+            else if (ButtonMonitor.isPressed(buttonName.right_bumper)) {
+                slideyTurni.setPower(slideyTurni.getPower()-.5);
+            }
 
+            //((DcMotorEx) slideyTurni).setVelocity(50);
 
-                //TODO: add angle thingy, limit thingy, and gravity thingy
+            telemetry.addData("Toggle:", SlideyToggle);
+            telemetry.addData("Target Pos", slideyAngleToPos(45));
+            telemetry.addData("Current Pos", SlideTurniCurrentPos);
+            telemetry.addData("Current Angle", SlideTurniAngle);
+            telemetry.addData("Current Power", slideyTurni.getPower());
+            telemetry.addData("Current Current", ((DcMotorEx) slideyTurni).getCurrent(CurrentUnit.AMPS));
+            telemetry.addData("Dir", slideyTurni.getDirection());
+            telemetry.addData("Velcity", ((DcMotorEx) slideyTurni).getVelocity());
 
-                double LinearTurniPower = (-gamepad2.right_stick_y) / LowerPowerBy;
-                //final double GearRatio3 =  2.89;
-                final double GearRatio4 = 3.61;
-                final double GearRatio5 = 5.23;
-                final double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
-                SlideTurniCurrentPos = slideyTurni.getCurrentPosition();
-                double SlideTurniAngle = (SlideTurniCurrentPos / DriveHDHexMotorCPR) * 360;//no need to mod 360 (i think)
-                telemetry.addData("Slider Angle", SlideTurniAngle);
-                if (ButtonMonitor.wasPressed(buttonName.circle))
-                    SlideyToggle = !SlideyToggle;
-                slideyTurni.setDirection(SlideyToggle ? DcMotorSimple.Direction.FORWARD : DcMotorSimple.Direction.REVERSE);
-                slideyTurni.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                slideyTurni.setTargetPosition(slideyGoToAngle(45));
-                slideyTurni.setPower(.01);
-                telemetry.addData("Toggle:", SlideyToggle);
-                final int LinearTurniLimit = 250;
-                /*if (slideyTurni.getCurrentPosition() > LinearTurniLimit) {//over limit
-                    slideyTurni.setTargetPosition(LinearTurniLimit-50);
-                    slideyTurni.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                    slideyTurni.setDirection(DcMotorSimple.Direction.FORWARD);
-                    slideyTurni.setPower(idlePower+.2);
-                }
-                else { //power given (move)
-                    slideyTurni.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                    if (ButtonMonitor.isPressed(buttonName.circle)){
-                        idleToggle = !idleToggle;
-                        if (idleToggle){
-                            idlePower = LinearTurniPower;
-                        }
-                    }
-                    slideyTurni.setPower(idleToggle? idlePower: LinearTurniPower/(LowerBy*2));
-                    SlideTurniCurrentPos = slideyTurni.getCurrentPosition();
-                }*/
-            /*telemetry.addData("Theta value\t", "%4.2f", theta);
-            telemetry.addData("Theta value (deg)\t", "%4.2f", (theta*(180/Math.PI)+360)%360);
-            telemetry.addLine();
-            telemetry.addData("X - Roll\t", "%4.2f", Roll);
-            telemetry.addData("Y - Pitch\t", "%4.2f", Pitch);
-            telemetry.addData("Z - Yaw\t", "%4.2f", Yaw);
-            telemetry.addLine();
-            telemetry.addData("Status", "Run Time: " + runtime.toString());
-            telemetry.addData("Pressed, Low Power Mode?", "%s %s", ButtonMonitor.buttonMap.get(buttonName.share).toString(), LowerModeToggle? "yuh" : "nuh");
-            telemetry.addData("Pressed, Float Mode?", "%s %s", ButtonMonitor.buttonMap.get(buttonName.options).toString(), ZPFloatToggle? "Float" : "Brake");
-            telemetry.addData("Front left/Right", "%4.2f, %4.2f", leftFrontPower, rightFrontPower);
-            telemetry.addData("Back  left/Right", "%4.2f, %4.2f", leftBackPower, rightBackPower);
-            telemetry.addData("Left/Right (Servos)", "%4.2f, %4.2f", LeftServo.getPosition(), RightServo.getPosition());
-            telemetry.addData("Front left/Right Encoders", "%d, %d", leftFrontDriveEncoderPos, rightFrontDriveEncoderPos);
-            telemetry.addData("Back left/Right Encoders","%d, %d", rightBackDriveEncoderPos, leftBackDriveEncoderPos);*/
-            /*telemetry.addData("Slidey Encoders","%d", slideyTurni.getCurrentPosition());
-            telemetry.addData("Slidey Encoders","%d", linearSlidey.getCurrentPosition());
-            telemetry.addData("Slidey Power", "%.2f", slideyTurni.getPower());
-            int SlideTurniCurrentPos = slideyTurni.getCurrentPosition();
-            double SlideTurniAngle = (SlideTurniCurrentPos/DriveHDHexMotorCPR) *360;//no need to mod 360 (i think)
-            telemetry.addData("Slider Angle", SlideTurniAngle);*/
-            //telemetry.addData("2m Dis", "Inch: %1.3f, Cm: %1.3f", REV2mDistance.getDistance(DistanceUnit.INCH), REV2mDistance.getDistance(DistanceUnit.CM));
+            if (isStopRequested()) {
+                ReadWriteFile.writeFile(ROBOT_DATA_DIR, "Data.txt", PostoPower.toString());
+            }
             telemetry.update();
             }
         }
 
-    private int slideyGoToAngle(double angle){
+    private int slideyAngleToPos(double angle){
         final double GearRatio4 = 3.61;
         final double GearRatio5 = 5.23;
         final double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
-        final double WheelCircum = Math.PI * 2;
-        return (int) (slideyTurni.getCurrentPosition()/DriveHDHexMotorCPR)*360%360;
+        return (int) (angle/360*DriveHDHexMotorCPR);
+    }
+
+    private double slideyPostoAngle(int Pos){
+        final double GearRatio4 = 3.61;
+        final double GearRatio5 = 5.23;
+        final double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
+        return Pos / DriveHDHexMotorCPR * 360;
+    }
+
+    double getCompensationPower(double Pos) {
+        //{26=0.536, 67=0.362, 112=0.0551, 25=0.42, 55=0.362, 48=0.395, 37=0.577}
+        double[] armPos = {26, 67, 112, 25, 55, 48, 37}; // Degrees
+        double[] gravityCompensation = {.536, .362, .055, .42, .362, .395, .577}; // Corresponding power
+        for (int i = 0; i < armPos.length - 1; i++) {
+            if (Pos >= armPos[i] && Pos <= armPos[i + 1]) {
+                double P1 = gravityCompensation[i];
+                double P2 = gravityCompensation[i + 1];
+                double A1 = armPos[i];
+                double A2 = armPos[i + 1];
+                return P1 + (P2 - P1) * (Pos - A1) / (A2 - A1);
+            }
+        }
+        return 0; // Default power if angle is out of range
     }
 
     private void setZPFloat(boolean isGamepad2) {
@@ -342,15 +322,6 @@ public class DebugClaw extends LinearOpMode {
             actuatorDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
             slideyTurni.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         }
-    }
-
-    private double resetYaw() {
-        double Yaw = BHI260AP.getRobotOrientation(
-                AxesReference.INTRINSIC,
-                AxesOrder.XYZ,
-                AngleUnit.RADIANS
-            ).thirdAngle;
-        return Yaw;
     }
 
     // This button status thing is inspired by u/m0stlyharmless_user and u/fusionforscience on reddit from a post 8y ago :)

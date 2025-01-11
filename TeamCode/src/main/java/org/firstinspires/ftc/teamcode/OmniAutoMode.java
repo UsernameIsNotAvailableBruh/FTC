@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 //import com.qualcomm.robotcore.eventloop.opmode.OpMode; lower level version of LinearOpMode
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -18,6 +19,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 // *--*
 
 @Autonomous(name="AutoDickstein", group = "OpDicksteinModes")
+@Disabled
 public class OmniAutoMode extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
