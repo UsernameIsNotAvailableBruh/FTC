@@ -118,6 +118,7 @@ public class ClawRotation extends LinearOpMode {
         RightServo = hardwareMap.get(Servo.class, "serv2"); //port 1
         //ExtendyServo = hardwareMap.get(Servo.class, "serv3");
 
+
         // Effects (just for funsies)
         Effects effects = new Effects();
 
@@ -141,18 +142,15 @@ public class ClawRotation extends LinearOpMode {
         for (LynxModule hub : Hubs) {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
-        waitForStart();
-        telemetry.addData("Status", "Initialized");
-        runtime.reset();
 
         // run until the end of the match (driver presses STOP)
 
-        RightServo.setDirection(Servo.Direction.REVERSE);
         setZPBrake(false);
         boolean ZPFloatToggle = true;
+        boolean ClawServoToggle = true;
         boolean ClawToggle = true;
         linearSlidey.setDirection(DcMotor.Direction.REVERSE);
-        slideyTurni.setDirection(DcMotorSimple.Direction.REVERSE);
+        slideyTurni.setDirection(DcMotorSimple.Direction.FORWARD);
 
         linearSlidey.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         slideyTurni.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -163,21 +161,24 @@ public class ClawRotation extends LinearOpMode {
         Buttons ButtonMonitor = new Buttons(true);
         double LowerPowerBy = 1;
         boolean LowerModeToggle = false;
-//            double ExtendAmtPos = 0;
-        // double LinearTurniPower = .2;
         int LinearCurrentPos = 0;
         int SlideTurniCurrentPos = 0;
+        LeftServo.setDirection(Servo.Direction.REVERSE);
+        RightServo.setDirection(Servo.Direction.FORWARD);
         setZPFloat(true);
-        double ActurioPower = 0;
-        telemetry.addData("Status", "Initialized");
-        boolean SlideyToggle = false;
         LeftServo.setPosition(.5);
-        RightServo.setPosition(.5);
-        double idlePower = .3;
-        HashMap<Integer, Double> PostoPower = new HashMap<>();
+        RightServo.setPosition(.3);
         waitForStart();
+        telemetry.addData("Status", "Initialized");
+        runtime.reset();
+        sleep(1000);
         while (opModeIsActive()) {
             ButtonMonitor.update();
+
+            if (ButtonMonitor.Pressed(buttonName.left_stick_button))
+                gamepad1.rumble(100);
+            if (ButtonMonitor.Pressed(buttonName.right_stick_button))
+                gamepad2.stopRumble();
 
             if (ButtonMonitor.wasPressed(buttonName.options)) {
                 ZPFloatToggle = !ZPFloatToggle;
@@ -188,52 +189,37 @@ public class ClawRotation extends LinearOpMode {
                 setZPBrake(true);
             }
 
-            if (ButtonMonitor.wasPressed(buttonName.share)) {
+            if (ButtonMonitor.wasPressed(buttonName.share)){
                 LowerModeToggle = !LowerModeToggle;
             }
             if (LowerModeToggle) {
                 LowerPowerBy = LowerBy;
-            } else {
+            }
+            else {
                 LowerPowerBy = 1;
             }
 
-            double SlideyPower = -gamepad2.left_stick_y / LowerPowerBy;
-            //ExtendyServo.setPosition(ExtendAmtPos);
-
-            LinearCurrentPos = linearSlidey.getCurrentPosition();
-            final int LinearSlideyLimit = 50000; //TODO
-            if (linearSlidey.getCurrentPosition() > LinearSlideyLimit) {
-                linearSlidey.setTargetPosition(LinearSlideyLimit);
-                linearSlidey.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                linearSlidey.setPower(.1);
-            } else if (SlideyPower == 0) {
-                linearSlidey.setTargetPosition(LinearCurrentPos);
-                linearSlidey.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                linearSlidey.setPower(.2);
-            } else {
-                if (linearSlidey.getMode() == DcMotor.RunMode.RUN_TO_POSITION) {
-                    linearSlidey.setTargetPosition(LinearSlideyLimit - 10);
-                }
-                linearSlidey.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                int closeness = 250;
-                if (linearSlidey.getCurrentPosition() >= LinearSlideyLimit - closeness) { // close to the top
-                    linearSlidey.setPower(SlideyPower / LowerBy);
-                } else {
-                    linearSlidey.setPower(SlideyPower);
-                }
+            if (ButtonMonitor.wasPressed(buttonName.cross)) {
+                ClawServoToggle = !ClawServoToggle;
+            }
+            if (ClawServoToggle) {
+                LeftServo.setPosition(.7);
+                RightServo.setPosition(.7);
+            }
+            else if (!ClawServoToggle) {
+                LeftServo.setPosition(.3);
+                RightServo.setPosition(.3);
             }
 
-            actuatorDrive.setPower(0);
-            if (ButtonMonitor.wasPressed(buttonName.dpad_up)) {
-                actuatorDrive.setPower(1 / LowerPowerBy);
-            } else if (ButtonMonitor.wasPressed(buttonName.dpad_down)) {
-                actuatorDrive.setPower(-1 / LowerPowerBy);
-            }
-
-            //TODO: add angle thingy, limit thingy, and gravity thingy
-
-            double LinearTurniPower = (-gamepad2.right_stick_y) / (LowerPowerBy);
-            //final double GearRatio3 =  2.89;
+//                if (ButtonMonitor.isPressed(buttonName.dpad_left) && ButtonMonitor.isPressed(buttonName.dpad_right)) {
+//                    ExtendAmtPos = .5;
+//                }
+//                else if (ButtonMonitor.Pressed(buttonName.dpad_left)) {
+//                    ExtendAmtPos = .999;
+//                }
+//                else if (ButtonMonitor.Pressed(buttonName.dpad_right)) {
+//                    ExtendAmtPos = 0;
+//                }
 
             final double GearRatio4 = 3.61;
             final double GearRatio5 = 5.23;
@@ -241,19 +227,13 @@ public class ClawRotation extends LinearOpMode {
             SlideTurniCurrentPos = slideyTurni.getCurrentPosition();
             double SlideTurniAngle = (SlideTurniCurrentPos / DriveHDHexMotorCPR) * 360;//no need to mod 360 (i think)
 
-            if (ButtonMonitor.wasPressed(buttonName.circle)) {
-                PostoPower.put(SlideTurniCurrentPos, slideyTurni.getPower());
+            if (slideyPostoAngle(slideyTurni.getCurrentPosition()) >= 90){
+                ClawToggle = false;
             }
-            if (ButtonMonitor.wasPressed(buttonName.triangle)){
-                SlideyToggle = !SlideyToggle;
+            else{
+                ClawToggle = true;
             }
-
-            if (slideyPostoAngle(slideyTurni.getCurrentPosition()) > 90+45) {//over limit
-                slideyTurni.setPower(-.35);
-            }
-            else {
-                slideyTurni.setPower(.35);
-            }
+            slideyTurni.setPower(ClawToggle? .1:-.1);
             if (ButtonMonitor.isPressed(buttonName.left_bumper)) {
                 slideyTurni.setPower(slideyTurni.getPower()+.45);
             }
@@ -261,20 +241,47 @@ public class ClawRotation extends LinearOpMode {
                 slideyTurni.setPower(slideyTurni.getPower()-.5);
             }
 
-            //((DcMotorEx) slideyTurni).setVelocity(50);
+            double SlideyPower = -gamepad2.left_stick_y/LowerPowerBy;
+            //ExtendyServo.setPosition(ExtendAmtPos);
+            LinearCurrentPos = linearSlidey.getCurrentPosition();
+            final int LinearSlideyLimit = 100_000; //ignore limit
+            if (linearSlidey.getCurrentPosition() > LinearSlideyLimit) {
+                linearSlidey.setTargetPosition(LinearSlideyLimit);
+                linearSlidey.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                linearSlidey.setPower(.1);
+            }
+            else if (SlideyPower == 0) {
+                linearSlidey.setTargetPosition(LinearCurrentPos);
+                linearSlidey.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                linearSlidey.setPower(.4);
+            }
+            else {
+                if (linearSlidey.getMode() == DcMotor.RunMode.RUN_TO_POSITION){
+                    linearSlidey.setTargetPosition(LinearSlideyLimit-10);
+                }
+                linearSlidey.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                int closeness = 250;
+                if (linearSlidey.getCurrentPosition() >= LinearSlideyLimit-closeness) { // close to the top
+                    linearSlidey.setPower(SlideyPower/LowerBy);
+                }
+                else {
+                    linearSlidey.setPower(SlideyPower);
+                }
+            }
 
-            telemetry.addData("Toggle:", SlideyToggle);
-            telemetry.addData("Target Pos", slideyAngleToPos(45));
+            actuatorDrive.setPower(0);
+            if (ButtonMonitor.isPressed(buttonName.dpad_up)){
+                actuatorDrive.setPower(1/LowerPowerBy);
+            }
+            else if (ButtonMonitor.isPressed(buttonName.dpad_down)){
+                actuatorDrive.setPower(-1/LowerPowerBy);
+            }
+
             telemetry.addData("Current Pos", SlideTurniCurrentPos);
             telemetry.addData("Current Angle", SlideTurniAngle);
             telemetry.addData("Current Power", slideyTurni.getPower());
-            telemetry.addData("Current Current", ((DcMotorEx) slideyTurni).getCurrent(CurrentUnit.AMPS));
             telemetry.addData("Dir", slideyTurni.getDirection());
-            telemetry.addData("Velcity", ((DcMotorEx) slideyTurni).getVelocity());
-
-            if (isStopRequested()) {
-                ReadWriteFile.writeFile(ROBOT_DATA_DIR, "Data.txt", PostoPower.toString());
-            }
+            telemetry.addData("Slidey Pos", (linearSlidey).getCurrentPosition());
             telemetry.update();
             }
         }
@@ -291,22 +298,6 @@ public class ClawRotation extends LinearOpMode {
         final double GearRatio5 = 5.23;
         final double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
         return Pos / DriveHDHexMotorCPR * 360;
-    }
-
-    double getCompensationPower(double Pos) {
-        //{26=0.536, 67=0.362, 112=0.0551, 25=0.42, 55=0.362, 48=0.395, 37=0.577}
-        double[] armPos = {26, 67, 112, 25, 55, 48, 37}; // Degrees
-        double[] gravityCompensation = {.536, .362, .055, .42, .362, .395, .577}; // Corresponding power
-        for (int i = 0; i < armPos.length - 1; i++) {
-            if (Pos >= armPos[i] && Pos <= armPos[i + 1]) {
-                double P1 = gravityCompensation[i];
-                double P2 = gravityCompensation[i + 1];
-                double A1 = armPos[i];
-                double A2 = armPos[i + 1];
-                return P1 + (P2 - P1) * (Pos - A1) / (A2 - A1);
-            }
-        }
-        return 0; // Default power if angle is out of range
     }
 
     private void setZPFloat(boolean isGamepad2) {
