@@ -19,7 +19,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 // *--*
 
 @Autonomous(name="AutoDickstein", group = "OpDicksteinModes")
-@Disabled
 public class OmniAutoMode extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
@@ -35,7 +34,10 @@ public class OmniAutoMode extends LinearOpMode {
     final double DriveHDHexMotorCPR = 28 * GearRatio5 * GearRatio4;
     final double goBILDAWheel = 3.77953; //96 mm -> in \\diameter
     final double WheelCircum = Math.PI * goBILDAWheel;
-
+    double leftFrontPower  = 1;
+    double rightBackPower  = 1;
+    double leftBackPower   = 1;
+    double rightFrontPower = 1;
     @Override
     public void runOpMode() {
         waitForStart();
@@ -82,8 +84,19 @@ public class OmniAutoMode extends LinearOpMode {
         double RFDistance = WheelCircum*RFRevolutions;
         double RBDistance = WheelCircum*RBRevolutions;
 
-
-        GotoPositionForward(InchtoPos(10));
+        leftFrontPower  *= .5;
+        rightBackPower  *= .5;
+        leftBackPower   *= -.5;
+        rightFrontPower *= -.5;
+        leftFrontDrive.setPower(leftFrontPower);
+        rightBackDrive.setPower(rightBackPower);
+        leftBackDrive.setPower(leftBackPower);
+        rightFrontDrive.setPower(rightFrontPower);
+        sleep(1000);
+        leftFrontDrive.setPower(0);
+        rightBackDrive.setPower(0);
+        leftBackDrive.setPower(0);
+        rightFrontDrive.setPower(0);
 
         telemetry.addData("Status", "Run Time: " + runtime.toString());
         telemetry.addLine("Encoder");
