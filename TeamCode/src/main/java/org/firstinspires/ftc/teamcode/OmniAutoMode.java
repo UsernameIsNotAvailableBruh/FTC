@@ -26,6 +26,7 @@ public class OmniAutoMode extends LinearOpMode {
     private DcMotor leftBackDrive = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
+    private DcMotor pitch = null;
     private IMU BHI260AP = null;
 
     final double GearRatio3 =  2.89;
@@ -43,16 +44,23 @@ public class OmniAutoMode extends LinearOpMode {
         waitForStart();
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
-        leftFrontDrive = hardwareMap.get(DcMotor.class, "leftFront"); //Motor 0 = left front
-        rightFrontDrive = hardwareMap.get(DcMotor.class, "rightFront"); //Motor 1 = right front
-        rightBackDrive = hardwareMap.get(DcMotor.class, "rightBack"); //Motor 2 = right bottom
-        leftBackDrive = hardwareMap.get(DcMotor.class, "leftBack"); //Motor 3 = left bottom
+        leftBackDrive  = hardwareMap.get(DcMotor.class, "lb"); // 0
+        leftFrontDrive  = hardwareMap.get(DcMotor.class, "lf"); // 1
+        rightBackDrive = hardwareMap.get(DcMotor.class, "rb"); // 2
+        rightFrontDrive = hardwareMap.get(DcMotor.class, "rf"); // 3
+        pitch = hardwareMap.get(DcMotor.class, "pitch");
+
+        leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         BHI260AP = hardwareMap.get(IMU.class, "imu");
 
-        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftFrontDrive.setDirection(DcMotorSimple.Direction.FORWARD);
+        leftBackDrive.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightFrontDrive.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightBackDrive.setDirection(DcMotorSimple.Direction.FORWARD);
 
         IMU.Parameters IMUParams = new IMU.Parameters(
                 new RevHubOrientationOnRobot(
@@ -92,11 +100,26 @@ public class OmniAutoMode extends LinearOpMode {
         rightBackDrive.setPower(rightBackPower);
         leftBackDrive.setPower(leftBackPower);
         rightFrontDrive.setPower(rightFrontPower);
-        sleep(1000);
+
+        pitch.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        pitch.setDirection(DcMotor.Direction.REVERSE);
+        pitch.setPower(.4);
+
+        runtime.reset();
+        while (opModeIsActive() && runtime.seconds()<.5){
+            telemetry.addData("Status", "Run Time: " + runtime.toString());
+        }
+
+        runtime.reset();
+        while (opModeIsActive() && runtime.seconds()<2.5){
+            telemetry.addData("Status", "Run Time: " + runtime.toString());
+            pitch.setPower(.1);
+        }
         leftFrontDrive.setPower(0);
         rightBackDrive.setPower(0);
         leftBackDrive.setPower(0);
         rightFrontDrive.setPower(0);
+        pitch.setPower(0);
 
         telemetry.addData("Status", "Run Time: " + runtime.toString());
         telemetry.addLine("Encoder");

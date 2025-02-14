@@ -96,7 +96,7 @@ import java.util.List;
 //BHI260AP is the IMU
 
 //The name of the Driver Hub config file is "ILoveDickstein" (dedicated to my dearest friend, Jacob Dickstein (who's a captain of 10847))
-@TeleOp(name="OpDickstein", group="OpMode")
+
 public class OmniOpMode extends LinearOpMode {
     // Declare OpMode members for each of the 4 motors.
     private ElapsedTime runtime           = new ElapsedTime();
@@ -707,8 +707,8 @@ public class OmniOpMode extends LinearOpMode {
         GP2
     }
     private class Buttons {
-        public  final EnumMap<buttonName, Status> buttonMap     = new EnumMap<buttonName, Status>(buttonName.class);
-        private final EnumMap<buttonName, Button> ButtonStorage = new EnumMap<buttonName, Button>(buttonName.class);
+        public  final EnumMap<buttonName, Status> buttonMap     = new EnumMap<>(buttonName.class);
+        private final EnumMap<buttonName, Button> ButtonStorage = new EnumMap<>(buttonName.class);
         private Gpads GP;
         private Gamepad gpad = new Gamepad();
         private boolean[] buttonList;
